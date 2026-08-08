@@ -1,7 +1,14 @@
-from src.main.api.data.data import *
+from src.main.api.utils.request import post
+from src.main.api.config import AUTH_LOGIN
+from src.main.api.data.data import ADMIN_USERNAME, ROLE_ADMIN, ADMIN_PASSWORD
+
 
 class TestLoginAdmin:
-    def test_login_admin(self,login_admin):
-        assert login_admin.status_code == 200, "Login Admin failed"
-        assert login_admin.json()["user"]["username"] == ADMIN_USERNAME, "Username is NOT admin"
-        assert login_admin.json()["user"]["role"] == ROLE_ADMIN, "Role is NOT admin"
+    def test_login_admin(self):
+        response = post(
+            AUTH_LOGIN,
+            json={"username": ADMIN_USERNAME, "password": ADMIN_PASSWORD},
+            expected_status=200
+        )
+        assert response.json()["user"]["username"] == ADMIN_USERNAME
+        assert response.json()["user"]["role"] == ROLE_ADMIN
