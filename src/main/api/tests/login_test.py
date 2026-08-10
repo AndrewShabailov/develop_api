@@ -3,7 +3,7 @@ from src.main.api.config import AUTH_LOGIN
 from src.main.api.data.data import ADMIN_USERNAME, ROLE_ADMIN, ADMIN_PASSWORD
 
 
-class TestLoginAdmin:
+class TestLogin:
     def test_login_admin(self):
         response = post(
             AUTH_LOGIN,
@@ -12,3 +12,9 @@ class TestLoginAdmin:
         )
         assert response.json()["user"]["username"] == ADMIN_USERNAME
         assert response.json()["user"]["role"] == ROLE_ADMIN
+
+    def test_login_user(self, login_user, user_name):
+        assert login_user.json()["user"]["username"] == user_name, f"Username is NOT equal {user_name}"
+
+
+
