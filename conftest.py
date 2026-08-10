@@ -169,20 +169,22 @@ def credit_request(create_credit_user_account, credit_token):
         token=credit_token,
         expected_status=201
     )
+    print(response.json())
     return response
 
 @pytest.fixture
 def credit_repay(credit_request, credit_token, create_credit_user_account):
     account_id = create_credit_user_account.json()["id"]
-    post(
+    response = post(
         CREDIT_REPAY,
         json={
                 "creditId": credit_request.json()["creditId"],
                 "accountId": account_id,
-                "amount": 1000
+                "amount": credit_request.json()["amount"]
         },
         token=credit_token
         )
+    return response
 
 @pytest.fixture
 def credit_history(credit_request, credit_token, create_credit_user_account):
