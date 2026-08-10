@@ -1,7 +1,10 @@
 import pytest
-from src.main.api.config import *
+
+from src.main.api.clients.account_api import AccountApi
+from src.main.api.clients.admin_api import AdminApi
 from src.main.api.data.data import *
-from src.main.api.utils.request import delete, get, post
+from src.main.api.clients.credit_api import CreditApi
+from src.main.api.clients.auth_api import AuthApi
 
 @pytest.fixture
 def user_name():
@@ -13,183 +16,147 @@ def credit_user_name():
 
 @pytest.fixture
 def login_user(admin_token, user_name):
-    post(
-        ADMIN_CREATE,
-        json={
-            "username": user_name,
-            "password": USER_PASSWORD,
-            "role": ROLE_USER
-        },
-        token=admin_token,
+    admin_api = AdminApi(admin_token)
+    admin_api.admin_create(
+        username=user_name,
+        password=USER_PASSWORD,
+        role=ROLE_USER
     )
-    response = post(
-        AUTH_LOGIN,
-        json={
-            "username": user_name,
-            "password": USER_PASSWORD
-        }
-    )
+    auth_api = AuthApi(user_name, USER_PASSWORD)
+    response = auth_api.login()
     return response
 
 @pytest.fixture
 def login_admin():
-    return post(
-        AUTH_LOGIN,
-        json={
-            "username": ADMIN_USERNAME,
-            "password": ADMIN_PASSWORD
-        }
-    )
+    auth_api = AuthApi(ADMIN_USERNAME, ADMIN_PASSWORD)
+    response = auth_api.login()
+    return response
 
 @pytest.fixture
-def admin_token(login_admin):
-    return login_admin.json().get("token")
+def admin_token():
+    auth_api = AuthApi(ADMIN_USERNAME, ADMIN_PASSWORD)
+    response = auth_api.login()
+    return response.json().get("token")
 
 @pytest.fixture
 def user_token(create_user, user_name):
-    response = post(
-        AUTH_LOGIN,
-        json={"username": user_name, "password": USER_PASSWORD}
-    )
+    auth_api = AuthApi(user_name, USER_PASSWORD)
+    response = auth_api.login()
     return response.json().get("token")
 
 @pytest.fixture
 def credit_token(create_credit_user, credit_user_name):
-    response = post(
-        AUTH_LOGIN,
-        json={"username": credit_user_name, "password": USER_PASSWORD}
-    )
+    auth_api = AuthApi(credit_user_name, USER_PASSWORD)
+    response = auth_api.login()
     return response.json().get("token")
 
 @pytest.fixture
+def get_all_users(admin_token):
+    admin_api = AdminApi(admin_token)
+    response = admin_api.get_all_users()
+    return response
+
+@pytest.fixture
 def create_user(admin_token, user_name):
-    return post(
-        ADMIN_CREATE,
-        json={
-            "username": user_name,
-            "password": USER_PASSWORD,
-            "role": ROLE_USER
-        },
-        token=admin_token
+    admin_api = AdminApi(admin_token)
+    response = admin_api.admin_create(
+        username=user_name,
+        password=USER_PASSWORD,
+        role=ROLE_USER
     )
+    return response
 
 @pytest.fixture
 def create_credit_user(admin_token, credit_user_name):
-    return post(
-        ADMIN_CREATE,
-        json={
-            "username": credit_user_name,
-            "password": USER_PASSWORD,
-            "role": ROLE_CREDIT_SECRET
-        },
-        token=admin_token
+    admin_api = AdminApi(admin_token)
+    response = admin_api.admin_create(
+        username=credit_user_name,
+        password=USER_PASSWORD,
+        role=ROLE_CREDIT_SECRET
     )
-
+    return response
 
 @pytest.fixture
 def create_user_account(user_token):
-    return post(
-        ACCOUNT_CREATE,
-        token=user_token,
-        expected_status=201
-    )
+    account_api = AccountApi(user_token)
+    response = account_api.account_create()
+    return response
 
 @pytest.fixture
 def second_user_account(user_token):
-    return post(
-        ACCOUNT_CREATE,
-        token=user_token,
-        expected_status=201
-    )
+    account_api = AccountApi(user_token)
+    response = account_api.account_create()
+    return response
 
 @pytest.fixture
 def create_credit_user_account(credit_token):
-    return post(
-        ACCOUNT_CREATE,
-        token=credit_token,
-        expected_status=201
-    )
+    account_api = AccountApi(credit_token)
+    response = account_api.account_create()
+    return response
 
 @pytest.fixture
-def create_deposit(create_user_account, user_token):
-    return post(
-        ACCOUNT_DEPOSIT,
-        json={
-            "accountId": create_user_account.json()["id"],
-            "amount": AMOUNT
-        },
-        token=user_token
+def deposit_account(create_user_account, user_token):
+    account_api = AccountApi(user_token)
+    response = account_api.account_deposit(
+        account_id=create_user_account.json()["id"],
+        amount=AMOUNT
     )
+    return response
 
 @pytest.fixture
-def create_transfer(create_user_account, second_user_account, user_token, create_deposit):
-    return post(
-        ACCOUNT_TRANSFER,
-        json={
-            "fromAccountId": create_user_account.json()["id"],
-            "toAccountId": second_user_account.json()["id"],
-            "amount": TRANSFER_AMOUNT
-        },
-        token=user_token
+def account_transfer(create_user_account, second_user_account, user_token):
+    account_api = AccountApi(user_token)
+    response = account_api.account_transfer(
+        from_account_id=create_user_account.json()["id"],
+        to_account_id=second_user_account.json()["id"],
+        amount=TRANSFER_AMOUNT
     )
+    return response
 
 @pytest.fixture
-def transactions_history(create_transfer, user_token):
-    account_id = create_transfer.json().get("fromAccountId")
-    return get(
-        f'{ACCOUNT_TRANSACTIONS}{account_id}',
-        token=user_token,
-        expected_status=200
+def transactions_history(account_transfer, user_token):
+    account_id = account_transfer.json().get("fromAccountId")
+    account_api = AccountApi(user_token)
+    response = account_api.get_account_transactions(
+        account_id=account_id
     )
-
-@pytest.fixture
-def all_users(admin_token):
-    return get(ALL_USERS, token=admin_token)
-
-@pytest.fixture
-def delete_user(create_user, admin_token):
-    return delete(
-        f"{DELETE_USER}{create_user.json()['id']}",
-        token=admin_token
-    )
+    return response
 
 @pytest.fixture
 def delete_all_users(admin_token):
-    return delete(DELETE_ALL_USERS, token=admin_token)
+    admin_api = AdminApi(admin_token)
+    response = admin_api.delete_all_users()
+    return response
+
+@pytest.fixture
+def delete_user(create_user, admin_token):
+    admin_api = AdminApi(admin_token)
+    response = admin_api.delete_user(create_user.json()["id"])
+    return response
 
 @pytest.fixture
 def credit_request(create_credit_user_account, credit_token):
-    response =  post(
-        CREDIT_REQUEST,
-        json={
-            "accountId": create_credit_user_account.json()["id"],
-            "amount": CREDIT_AMOUNT,
-            "termMonths": TERM_MONTHS
-        },
-        token=credit_token,
-        expected_status=201
+    credit_api = CreditApi(credit_token)
+    response = credit_api.request_credit(
+        account_id=create_credit_user_account.json()["id"],
+        amount=CREDIT_AMOUNT,
+        term_months=TERM_MONTHS
     )
-    print(response.json())
     return response
 
 @pytest.fixture
 def credit_repay(credit_request, credit_token, create_credit_user_account):
+    credit_api = CreditApi(credit_token)
     account_id = create_credit_user_account.json()["id"]
-    response = post(
-        CREDIT_REPAY,
-        json={
-                "creditId": credit_request.json()["creditId"],
-                "accountId": account_id,
-                "amount": credit_request.json()["amount"]
-        },
-        token=credit_token
-        )
+    response = credit_api.repay_credit(
+        credit_id=credit_request.json()["creditId"],
+        account_id=account_id,
+        amount=credit_request.json()["amount"]
+    )
     return response
 
 @pytest.fixture
 def credit_history(credit_request, credit_token, create_credit_user_account):
-    response = get(
-        CREDIT_HISTORY,
-        token=credit_token
-    )
+    credit_api = CreditApi(credit_token)
+    response = credit_api.get_credit_history()
     return response
