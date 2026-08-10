@@ -177,7 +177,7 @@ def credit_repay(credit_request, credit_token, create_credit_user_account):
     post(
         CREDIT_REPAY,
         json={
-                "creditId": credit_request.json()["id"],
+                "creditId": credit_request.json()["creditId"],
                 "accountId": account_id,
                 "amount": 1000
         },
