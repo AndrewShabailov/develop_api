@@ -1,5 +1,4 @@
 import pytest
-
 from src.main.api.clients.account_api import AccountApi
 from src.main.api.clients.admin_api import AdminApi
 from src.main.api.data.data import *
@@ -104,10 +103,10 @@ def deposit_account(create_user_account, user_token):
     return response
 
 @pytest.fixture
-def account_transfer(create_user_account, second_user_account, user_token):
+def account_transfer(deposit_account, second_user_account, user_token):
     account_api = AccountApi(user_token)
     response = account_api.account_transfer(
-        from_account_id=create_user_account.json()["id"],
+        from_account_id=deposit_account.json()["id"],
         to_account_id=second_user_account.json()["id"],
         amount=TRANSFER_AMOUNT
     )
