@@ -1,5 +1,8 @@
+import pytest
+from conftest import user_name
 from src.main.api.clients import admin_api
-from src.main.api.config import ALL_USERS
+from src.main.api.config import ALL_USERS, ADMIN_CREATE, DELETE_USER, DELETE_ALL_USERS
+from src.main.api.data.data import USER_PASSWORD
 
 
 class TestAdmin:
@@ -27,3 +30,55 @@ class TestAdmin:
         users_after = response_after.json()
 
         assert len(users_after) == 1, f"There are {len(users_after)} users"
+
+    @pytest.mark.known_bug('Response has wrong error message. Expected: "User already exists"')
+    def test_create_user_negative(self, admin_token, user_name):
+        admin_api.post(
+            ADMIN_CREATE,
+            json={
+                "username": user_name,
+                "password": USER_PASSWORD,
+                "role": "ROLE_USER",
+            },
+            token=admin_token,
+        )
+        response = admin_api.post(
+            ADMIN_CREATE,
+            json={
+                "username": user_name,
+                "password": USER_PASSWORD,
+                "role": "ROLE_USER",
+            },
+            token=admin_token,
+            expected_status=409
+        )
+        assert response.json()["error"] == "User already has maximum number of accounts(2)"
+
+    @pytest.mark.known_bug('Response has wrong status code, error message.'
+                           'Expected: status - 403, error - Admin access required')
+    def test_all_users_negative(self, create_user, user_token):
+        response = admin_api.get(
+            ALL_USERS,
+            token=user_token,
+            expected_status=401
+        )
+        assert response.json()["error"] == "Forbidden: Admin access required"
+
+
+    def test_delete_user_negative(self, admin_token):
+        response = admin_api.delete(
+            f'{DELETE_USER}{0}',
+            token=admin_token,
+            expected_status=404
+        )
+        assert response.json()["error"] == "User not found"
+
+    @pytest.mark.known_bug('Response has wrong status code, error message.'
+                           'Expected: status - 403, error - Admin access required')
+    def test_delete_all_users_negative(self, user_token):
+        response = admin_api.delete(
+            DELETE_ALL_USERS,
+            token=user_token,
+            expected_status=401
+        )
+        assert response.json()["error"] == "Forbidden: Admin access required"

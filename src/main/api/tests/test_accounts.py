@@ -1,4 +1,8 @@
+import pytest
+from conftest import credit_token
+from src.main.api.config import ACCOUNT_CREATE, ACCOUNT_DEPOSIT, ACCOUNT_TRANSFER, ACCOUNT_TRANSACTIONS
 from src.main.api.data.data import AMOUNT, TRANSFER_AMOUNT
+from src.main.api.utils.request import post, get
 
 
 class TestCreateAccount:
@@ -13,7 +17,7 @@ class TestCreateAccount:
 
         assert deposit_account.json()['balance'] == account_amount, f"Deposit amount is not equal to {account_amount}"
 
-    def test_account_transfer_between(
+    def test_account_transfer(
             self,
             deposit_account,
             account_transfer,
@@ -31,3 +35,52 @@ class TestCreateAccount:
         transaction_id = transactions_history.json()["transactions"][0]["transactionId"]
 
         assert transaction_id in [t["transactionId"] for t in transactions_history.json()["transactions"]]
+
+    def test_create_account_negative(self, admin_token):
+        response = post(
+            ACCOUNT_CREATE,
+            token=admin_token,
+            expected_status=403
+        )
+        assert response.json()["error"] == "Admins cannot create bank accounts"
+
+    @pytest.mark.known_bug('Response has wrong JSON key "message". Expected: "error"')
+    def test_deposit_account_negative(self, create_user_account):
+        response = post(
+            ACCOUNT_DEPOSIT,
+            json={
+                "accountId": create_user_account.json()["id"],
+                "amount": 9000
+            },
+            expected_status=401
+        )
+        assert response.json()["message"] == "JWT Token not found"
+
+    @pytest.mark.known_bug('Response has wrong "error". Expected: "Invalid request body"')
+    def test_account_transfer_negative(
+            self,
+            credit_token,
+            deposit_account,
+            second_user_account,
+    ):
+        response = post(
+            ACCOUNT_TRANSFER,
+            json={
+                "fromAccountId": deposit_account.json()["id"],
+                "toAccountId": second_user_account.json()["id"],
+                "amount": 0
+            },
+            token=credit_token,
+            expected_status=400
+        )
+        print(response.json())
+        assert response.json()["error"] == ("Amount must be greater than 0\n"
+                                            "Amount must be between 500 and 10000")
+
+    def test_get_transactions_history_negative(self, credit_token):
+       response = get(
+           f"{ACCOUNT_TRANSACTIONS}{0}",
+           token=credit_token,
+           expected_status=400
+       )
+       assert response.json()["error"] == "Invalid account ID format"
