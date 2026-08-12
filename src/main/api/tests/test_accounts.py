@@ -73,7 +73,6 @@ class TestCreateAccount:
             token=credit_token,
             expected_status=400
         )
-        print(response.json())
         assert response.json()["error"] == ("Amount must be greater than 0\n"
                                             "Amount must be between 500 and 10000")
 
