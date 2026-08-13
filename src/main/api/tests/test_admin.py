@@ -1,7 +1,7 @@
 import pytest
 from conftest import user_name
 from src.main.api.clients import admin_api
-from src.main.api.config import ALL_USERS, ADMIN_CREATE, DELETE_USER, DELETE_ALL_USERS
+from src.main.api.configs.config import ALL_USERS, ADMIN_CREATE, DELETE_USER, DELETE_ALL_USERS
 from src.main.api.data.data import USER_PASSWORD
 
 

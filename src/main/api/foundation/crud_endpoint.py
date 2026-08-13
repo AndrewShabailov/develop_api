@@ -1,0 +1,9 @@
+from typing import Protocol, Optional
+from requests import Response
+from src.main.api.models.base_model import BaseModel
+
+
+class CrudEndpoint(Protocol):
+    def post(self, model: Optional[BaseModel]) -> BaseModel | Response: ...
+    def get(self, entity_id: Optional[int] = None) -> BaseModel | Response: ...
+    def delete(self, entity_id: Optional[int] = None) -> BaseModel | Response: ...

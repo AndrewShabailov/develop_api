@@ -1,5 +1,5 @@
 import pytest
-from src.main.api.config import CREDIT_REQUEST, CREDIT_REPAY, CREDIT_HISTORY
+from src.main.api.configs.config import CREDIT_REQUEST, CREDIT_REPAY, CREDIT_HISTORY
 from src.main.api.utils.request import post, get
 
 
