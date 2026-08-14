@@ -1,84 +1,131 @@
 import pytest
-from conftest import user_name
-from src.main.api.clients import admin_api
-from src.main.api.configs.config import ALL_USERS, ADMIN_CREATE, DELETE_USER, DELETE_ALL_USERS
-from src.main.api.data.data import USER_PASSWORD
+from src.main.api.foundation.endpoint import Endpoint
+from src.main.api.foundation.requesters.crud_requester import CrudRequester
+from src.main.api.generators.model_generator import RandomModelGenerator
+from src.main.api.models.create_user_request import CreateUserRequest
+from src.main.api.specs.request_specs import RequestSpecs
+from src.main.api.specs.response_specs import ResponseSpecs
 
 
 class TestAdmin:
-    def test_create_user(self, create_user, user_name):
-        assert create_user.status_code == 200, "Status code is not 200"
-        assert create_user.json()["role"] == "ROLE_USER", "Role is not equal to ROLE_USER"
-        assert create_user.json()["username"] == user_name, f"Username is not equal to {user_name}"
+    @pytest.mark.parametrize(
+        "create_user_request",
+        [RandomModelGenerator.generate(CreateUserRequest)]
+    )
+    def test_create_user_valid(self, api_manager, create_user_request):
+        response = api_manager.admin_steps.create_user(create_user_request)
 
-    def test_all_users(self,create_user, get_all_users):
-        user_id = create_user.json()["id"]
-        assert user_id in [user["id"] for user in get_all_users.json()]
+        assert create_user_request.username == response.username
+        assert create_user_request.role == response.role
 
-    def test_delete_user(self, delete_user):
-        assert delete_user.json()["message"] == "User deleted successfully",\
-            f"Message: {delete_user.json()}"
+    @pytest.mark.parametrize(
+        "username, password",
+        [
+            ("абв", "Pas!sw0rd"),
+            ("ab", "Pas!sw0rd"),
+            ("abv!", "Pas!sw0rd"),
+            ("Max1", "Pas!sw0гд"),
+            ("Maxx2", "Pas!sw0"),
+            ("Maxx3", "pas!sw0rd"),
+            ("Maxx4", "PAS!SWORD"),
+            ("Maxx5", "PASSSWORD"),
+            ("Maxx6", "PAS!SWRRD")
+        ]
+    )
+    def test_create_user_invalid(self, username, password, api_manager):
+        create_user_request = CreateUserRequest(username=username, password=password, role="ROLE_USER")
+        api_manager.admin_steps.create_invalid_user(create_user_request)
 
-    def test_delete_all_users(self, get_all_users, delete_all_users, admin_token):
-        user_count_before = len(get_all_users.json())
-        deleted_count = delete_all_users.json()["deleted_count"]
+    @pytest.mark.parametrize(
+        "create_user_request",
+        [RandomModelGenerator.generate(CreateUserRequest)]
+    )
+    def test_all_users(self, api_manager, create_user_request):
+        created_user = api_manager.admin_steps.create_user(create_user_request)
+        users_list = api_manager.admin_steps.get_users()
 
-        assert user_count_before == deleted_count + 1
-        assert delete_all_users.json()["message"] == "All users except current admin deleted successfully"
+        assert created_user.username in [user.username for user in users_list]
 
-        response_after = admin_api.get(ALL_USERS, token=admin_token)
-        users_after = response_after.json()
+    @pytest.mark.parametrize(
+        "create_user_request",
+        [RandomModelGenerator.generate(CreateUserRequest)]
+    )
+    def test_delete_user(self, api_manager, create_user_request):
+        created_user = api_manager.admin_steps.create_user(create_user_request)
+        delete_response = api_manager.admin_steps.delete_user(created_user.id)
+
+        assert delete_response.json()["message"] == "User deleted successfully", \
+            f"Message: {delete_response.json()}"
+
+    @pytest.mark.parametrize(
+        "create_user_request",
+        [RandomModelGenerator.generate(CreateUserRequest)]
+    )
+    def test_delete_all_users(self, api_manager, create_user_request):
+        api_manager.admin_steps.create_user(create_user_request)
+        user_count_before = len(api_manager.admin_steps.get_users())
+        delete_result = api_manager.admin_steps.delete_all_users().json()
+
+        assert user_count_before == delete_result["deleted_count"] + 1
+        assert delete_result["message"] == "All users except current admin deleted successfully"
+
+        users_after = api_manager.admin_steps.get_users()
 
         assert len(users_after) == 1, f"There are {len(users_after)} users"
 
     @pytest.mark.known_bug('Response has wrong error message. Expected: "User already exists"')
-    def test_create_user_negative(self, admin_token, user_name):
-        admin_api.post(
-            ADMIN_CREATE,
-            json={
-                "username": user_name,
-                "password": USER_PASSWORD,
-                "role": "ROLE_USER",
-            },
-            token=admin_token,
-        )
-        response = admin_api.post(
-            ADMIN_CREATE,
-            json={
-                "username": user_name,
-                "password": USER_PASSWORD,
-                "role": "ROLE_USER",
-            },
-            token=admin_token,
-            expected_status=409
-        )
+    @pytest.mark.parametrize(
+        "create_user_request",
+        [RandomModelGenerator.generate(CreateUserRequest)]
+    )
+    def test_create_user_with_the_same_name_negative(self, api_manager, create_user_request):
+        api_manager.admin_steps.create_user(create_user_request)
+        response = CrudRequester(
+            RequestSpecs.auth_headers(
+                username=api_manager.admin_steps.username,
+                password=api_manager.admin_steps.password
+            ),
+            Endpoint.ADMIN_CREATE_USER,
+            ResponseSpecs.request_conflict()
+        ).post(create_user_request)
+
         assert response.json()["error"] == "User already has maximum number of accounts(2)"
 
     @pytest.mark.known_bug('Response has wrong status code, error message.'
                            'Expected: status - 403, error - Admin access required')
-    def test_all_users_negative(self, create_user, user_token):
-        response = admin_api.get(
-            ALL_USERS,
-            token=user_token,
-            expected_status=401
-        )
+    def test_all_users_negative(self, create_user_request):
+        response = CrudRequester(
+            RequestSpecs.auth_headers(
+                username=create_user_request.username,
+                password=create_user_request.password
+            ),
+            Endpoint.ADMIN_GET_USERS,
+            ResponseSpecs.request_unauthorized()
+        ).get()
+
         assert response.json()["error"] == "Forbidden: Admin access required"
 
 
-    def test_delete_user_negative(self, admin_token):
-        response = admin_api.delete(
-            f'{DELETE_USER}{0}',
-            token=admin_token,
-            expected_status=404
-        )
+    def test_delete_non_existing_user_negative(self, api_manager):
+        response = CrudRequester(
+            RequestSpecs.auth_headers(
+                username=api_manager.admin_steps.username,
+                password=api_manager.admin_steps.password
+            ),
+            Endpoint.ADMIN_DELETE_USER,
+            ResponseSpecs.request_not_found()
+        ).delete(0)
         assert response.json()["error"] == "User not found"
 
     @pytest.mark.known_bug('Response has wrong status code, error message.'
                            'Expected: status - 403, error - Admin access required')
-    def test_delete_all_users_negative(self, user_token):
-        response = admin_api.delete(
-            DELETE_ALL_USERS,
-            token=user_token,
-            expected_status=401
-        )
+    def test_delete_all_users_negative(self, create_user_request):
+        response = CrudRequester(
+            RequestSpecs.auth_headers(
+                username=create_user_request.username,
+                password=create_user_request.password
+            ),
+            Endpoint.ADMIN_DELETE_ALL_USERS,
+            ResponseSpecs.request_unauthorized()
+        ).delete()
         assert response.json()["error"] == "Forbidden: Admin access required"

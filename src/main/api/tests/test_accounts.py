@@ -1,8 +1,4 @@
 import pytest
-from conftest import credit_token
-from src.main.api.configs.config import ACCOUNT_CREATE, ACCOUNT_DEPOSIT, ACCOUNT_TRANSFER, ACCOUNT_TRANSACTIONS
-from src.main.api.data.data import AMOUNT, TRANSFER_AMOUNT
-from src.main.api.utils.request import post, get
 
 
 class TestCreateAccount:

@@ -1,6 +1,6 @@
 import pytest
 from src.main.api.models.create_user_request import CreateUserRequest
-from src.main.api.creation_rule.generators import RandomModelGenerator
+from src.main.api.generators.model_generator import RandomModelGenerator
 
 @pytest.fixture
 def create_user_request(api_manager):

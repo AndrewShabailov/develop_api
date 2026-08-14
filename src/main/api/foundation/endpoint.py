@@ -28,6 +28,12 @@ class Endpoint(Enum):
         response_model = None
     )
 
+    ADMIN_DELETE_ALL_USERS = EndpointConfiguration(
+        request_model=None,
+        url="/admin/users",
+        response_model=None
+    )
+
     LOGIN_USER = EndpointConfiguration(
         request_model = LoginUserRequest,
         url = "/auth/token/login",

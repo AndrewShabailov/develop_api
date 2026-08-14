@@ -1,53 +1,61 @@
 import pytest
-
-from src.main.api.classes.api_manager import ApiManager
+from src.main.api.foundation.endpoint import Endpoint
+from src.main.api.foundation.requesters.crud_requester import CrudRequester
+from src.main.api.generators.model_generator import RandomModelGenerator
+from src.main.api.models.create_user_request import CreateUserRequest
 from src.main.api.models.login_user_request import LoginUserRequest
+from src.main.api.specs.request_specs import RequestSpecs
+from src.main.api.specs.response_specs import ResponseSpecs
 
 
 @pytest.mark.api
 class TestUserLogin:
     def test_login_admin(self, api_manager):
-        user_manager = ApiManager(created_obj, username=user.username, password=user.password)
-        user_manager.admin_steps.get_users()  # → 403
-        response = api_manager.admin_steps.login_user(login_user_request)
+        login_request = LoginUserRequest(username="admin", password="123456")
+        response = api_manager.admin_steps.login_user(login_request)
 
-        assert login_user_request.username == response.user.username
+        assert login_request.username == response.user.username
         assert response.user.role == "ROLE_ADMIN"
 
-    def test_login_user(self, login_user, user_name):
-        assert 'token' in login_user.json()
-        assert login_user.json()["user"]["username"] == user_name, f"Username is NOT equal {user_name}"
+    def test_login_user(self, api_manager):
+        user_data = RandomModelGenerator.generate(CreateUserRequest)
+        api_manager.admin_steps.create_user(user_data)
 
-    @pytest.mark.parametrize("invalid_user_name, invalid_user_password",
-        [
-            ("абв", "Pas!sw0rd"),
-            ("ab", "Pas!sw0rd"),
-            ("abv!", "Pas!sw0rd"),
-            ("Max1", "Pas!sw0гд"),
-            ("Maxx2", "Pas!sw0"),
-            ("Maxx3", "pas!sw0rd"),
-            ("Maxx4", "PAS!SWORD"),
-            ("Maxx5", "PASSSWORD"),
-            ("Maxx6", "PAS!SWRRD")
-        ]
+        login_request = LoginUserRequest(username=user_data.username, password=user_data.password)
+        response = api_manager.admin_steps.login_user(login_request)
+
+        assert user_data.username == response.user.username
+        assert response.user.role == "ROLE_USER"
+        assert 'token' in response.json()
+        assert user_data.username == response.user.username,\
+            f"Username is NOT equal {user_data.username}"
+
+    @pytest.mark.known_bug("Response has wrong error message. Expected: 'Missing username or password'")
+    @pytest.mark.parametrize("invalid_payload",
+                             [
+                                 {"username": "", "password": "Pas!sw0rd"},
+                                 {"username": "TestUser", "password": ""}
+                             ]
                              )
-    def test_login_negative(
-            self,
-            invalid_user_name,
-            invalid_user_password
-    ):
-        response = post(
-            AUTH_LOGIN,
-            json={"username": invalid_user_name, "password": invalid_user_password},
-            expected_status=401
+    def test_negative_missing_login_or_password(self, invalid_payload):
+        response = CrudRequester(
+            RequestSpecs.base_headers(),
+            Endpoint.LOGIN_USER,
+            ResponseSpecs.request_bad()
+        ).post(
+            invalid_payload
         )
-        assert response.json()["error"] == "Invalid credentials"
+        invalid_key = [k for k, v in invalid_payload.items() if v == ""][0]
+        expected_error = f'The key "{invalid_key}" must be a non-empty string.'
 
-    def test_login_admin_negative(self):
-        response = post(
-            AUTH_LOGIN,
-            json={"username": ADMIN_USERNAME, "password": USER_PASSWORD},
-            expected_status=401
-        )
-        assert response.json()["error"] == "Invalid credentials"
+        assert response.json()["error"] == expected_error
 
+
+    def test_negative_login_with_invalid_admin_name(self, api_manager):
+        login_request = LoginUserRequest(username="adminn", password="123456")
+        response = CrudRequester(
+            RequestSpecs.base_headers(),
+            Endpoint.LOGIN_USER,
+            ResponseSpecs.request_unauthorized()
+        ).post(login_request)
+        assert response.json()["error"] == "Invalid credentials"

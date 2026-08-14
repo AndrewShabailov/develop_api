@@ -1,13 +1,18 @@
 import requests
 from src.main.api.foundation.http_requester import HttpRequester
 from src.main.api.models.base_model import BaseModel
-from typing import Optional
+from typing import Optional, Union
 from requests import Response
 
 
 class CrudRequester(HttpRequester):
-    def post(self, model: Optional[BaseModel]) -> Response:
-        body = model.model_dump() if model is not None else None
+    def post(self, model: Optional[Union[BaseModel, dict]]) -> Response:
+        if model is None:
+            body = None
+        elif isinstance(model, dict):
+            body = model
+        else:
+            body = model.model_dump()
 
         response = requests.post(
             url=self._url(),

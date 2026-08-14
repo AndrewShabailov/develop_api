@@ -20,11 +20,20 @@ class AdminSteps(BaseSteps):
         return response
 
     def delete_user(self, user_id: int):
-        CrudRequester(
+        response = CrudRequester(
             RequestSpecs.auth_headers(username=self.username, password=self.password),
             Endpoint.ADMIN_DELETE_USER,
             ResponseSpecs.request_ok()
         ).delete(user_id)
+        return response
+
+    def delete_all_users(self):
+        response = CrudRequester(
+            RequestSpecs.auth_headers(username=self.username, password=self.password),
+            Endpoint.ADMIN_DELETE_ALL_USERS,
+            ResponseSpecs.request_ok()
+        ).delete()
+        return response
 
     def create_invalid_user(self, create_user_request: CreateUserRequest):
         CrudRequester(

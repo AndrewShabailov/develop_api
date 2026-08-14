@@ -16,6 +16,9 @@ def clean_user(objects: List[Any]):
     api_manager = ApiManager(objects)
     for u in objects:
         if isinstance(u, CreateUserResponse):
-            api_manager.admin_steps.delete_user(u.id)
-        else:
-            logging.warning(f"Error in delete user_id {u.id}")
+            try:
+                api_manager.admin_steps.delete_user(u.id)
+            except AssertionError:
+                pass
+        # else:
+        #     logging.warning(f"Error in delete user_id {u.id}")

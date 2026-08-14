@@ -22,6 +22,10 @@ class ResponseSpecs:
         return ResponseSpecs.expect_status(HTTPStatus.BAD_REQUEST)
 
     @staticmethod
+    def request_conflict():
+        return ResponseSpecs.expect_status(HTTPStatus.CONFLICT)
+
+    @staticmethod
     def request_unauthorized():
         return ResponseSpecs.expect_status(HTTPStatus.UNAUTHORIZED)
 
