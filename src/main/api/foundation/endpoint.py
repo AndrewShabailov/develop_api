@@ -5,8 +5,13 @@ from dataclasses import dataclass
 from src.main.api.models.create_account_response import CreateAccountResponse
 from src.main.api.models.create_user_request import CreateUserRequest
 from src.main.api.models.create_user_response import CreateUserResponse
+from src.main.api.models.deposit_account_request import DepositAccountRequest
+from src.main.api.models.deposit_account_response import DepositAccountResponse
 from src.main.api.models.login_user_request import LoginUserRequest
 from src.main.api.models.login_user_response import LoginUserResponse
+from src.main.api.models.transfer_account_request import TransferAccountRequest
+from src.main.api.models.transfer_account_response import TransferAccountResponse
+
 
 @dataclass
 class EndpointConfiguration:
@@ -44,6 +49,24 @@ class Endpoint(Enum):
         request_model = None,
         url = "/account/create",
         response_model = CreateAccountResponse
+    )
+
+    DEPOSIT_ACCOUNT = EndpointConfiguration(
+        request_model=DepositAccountRequest,
+        url="/account/deposit",
+        response_model=DepositAccountResponse
+    )
+
+    TRANSFER_ACCOUNT = EndpointConfiguration(
+        request_model=TransferAccountRequest,
+        url="/account/transfer",
+        response_model=TransferAccountResponse
+    )
+
+    GET_ACCOUNT_TRANSACTIONS = EndpointConfiguration(
+        request_model=None,
+        url="/account/transactions",
+        response_model=None
     )
 
     ADMIN_GET_USERS = EndpointConfiguration(

@@ -26,7 +26,7 @@ class TestUserLogin:
 
         assert user_data.username == response.user.username
         assert response.user.role == "ROLE_USER"
-        assert 'token' in response.json()
+        assert 'token' in response.model_dump_json()
         assert user_data.username == response.user.username,\
             f"Username is NOT equal {user_data.username}"
 
