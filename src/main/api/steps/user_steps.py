@@ -1,6 +1,7 @@
 from src.main.api.foundation.endpoint import Endpoint
 from src.main.api.foundation.requesters.validate_crud_requester import ValidateCrudRequester
 from src.main.api.models.create_user_request import CreateUserRequest
+from src.main.api.models.credit_repay_request import CreditRepayRequest
 from src.main.api.models.credit_request import CreditRequest
 from src.main.api.models.deposit_account_request import DepositAccountRequest
 from src.main.api.models.transfer_account_request import TransferAccountRequest
@@ -101,4 +102,40 @@ class UserSteps(BaseSteps):
             Endpoint.CREDIT_REQUEST,
             ResponseSpecs.request_created()
         ).post(credit_payload)
+        return response
+
+    def credit_repay(
+            self,
+            create_user_request: CreateUserRequest,
+            credit_id,
+            account_id,
+            amount
+    ):
+        credit_repay_payload = CreditRepayRequest(
+            creditId=credit_id,
+            accountId=account_id,
+            amount=amount
+        )
+        response = ValidateCrudRequester(
+            RequestSpecs.auth_headers(
+                username=create_user_request.username,
+                password=create_user_request.password
+            ),
+            Endpoint.CREDIT_REPAY,
+            ResponseSpecs.request_ok()
+        ).post(credit_repay_payload)
+        return response
+
+    def get_credit_history(
+            self,
+            create_user_request: CreateUserRequest
+    ):
+        response = ValidateCrudRequester(
+            RequestSpecs.auth_headers(
+                username=create_user_request.username,
+                password=create_user_request.password
+            ),
+            Endpoint.GET_CREDIT_HISTORY,
+            ResponseSpecs.request_ok()
+        ).get()
         return response

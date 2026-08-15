@@ -36,3 +36,7 @@ class ResponseSpecs:
     @staticmethod
     def request_not_found():
         return ResponseSpecs.expect_status(HTTPStatus.NOT_FOUND)
+
+    @staticmethod
+    def request_unprocessable_entity():
+        return ResponseSpecs.expect_status(HTTPStatus.UNPROCESSABLE_ENTITY)

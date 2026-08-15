@@ -7,6 +7,9 @@ from dataclasses import dataclass
 from src.main.api.models.create_account_response import CreateAccountResponse
 from src.main.api.models.create_user_request import CreateUserRequest
 from src.main.api.models.create_user_response import CreateUserResponse
+from src.main.api.models.credit_history_response import CreditHistoryResponse
+from src.main.api.models.credit_repay_request import CreditRepayRequest
+from src.main.api.models.credit_repay_response import CreditRepayResponse
 from src.main.api.models.credit_request import CreditRequest
 from src.main.api.models.credit_response import CreditResponse
 from src.main.api.models.deposit_account_request import DepositAccountRequest
@@ -79,8 +82,20 @@ class Endpoint(Enum):
         response_model=CreditResponse
     )
 
+    CREDIT_REPAY = EndpointConfiguration(
+        request_model= CreditRepayRequest,
+        url="/credit/repay",
+        response_model=CreditRepayResponse
+    )
+
     ADMIN_GET_USERS = EndpointConfiguration(
         request_model=None,
         url="/admin/users",
         response_model=List[CreateUserResponse]
+    )
+
+    GET_CREDIT_HISTORY = EndpointConfiguration(
+        request_model=None,
+        url="/credit/history",
+        response_model=CreditHistoryResponse
     )
