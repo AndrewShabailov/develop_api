@@ -19,6 +19,17 @@ class AdminSteps(BaseSteps):
         self.created_obj.append(response)
         return response
 
+    def credit_user(self, create_user_request: CreateUserRequest):
+        create_user_request.role = "ROLE_CREDIT_SECRET"
+        response = ValidateCrudRequester(
+            RequestSpecs.auth_headers(username=self.username, password=self.password),
+            Endpoint.ADMIN_CREATE_USER,
+            ResponseSpecs.request_ok()
+        ).post(create_user_request)
+
+        self.created_obj.append(response)
+        return response
+
     def delete_user(self, user_id: int):
         response = CrudRequester(
             RequestSpecs.auth_headers(username=self.username, password=self.password),

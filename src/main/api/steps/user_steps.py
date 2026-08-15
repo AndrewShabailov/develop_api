@@ -1,6 +1,7 @@
 from src.main.api.foundation.endpoint import Endpoint
 from src.main.api.foundation.requesters.validate_crud_requester import ValidateCrudRequester
 from src.main.api.models.create_user_request import CreateUserRequest
+from src.main.api.models.credit_request import CreditRequest
 from src.main.api.models.deposit_account_request import DepositAccountRequest
 from src.main.api.models.transfer_account_request import TransferAccountRequest
 from src.main.api.specs.request_specs import RequestSpecs
@@ -26,7 +27,8 @@ class UserSteps(BaseSteps):
     def deposit_account(
             self,
             create_user_request: CreateUserRequest,
-            account_id,amount
+            account_id,
+            amount
     ):
         deposit_payload = DepositAccountRequest(
             accountId=account_id,
@@ -79,4 +81,24 @@ class UserSteps(BaseSteps):
         ).get(entity_id=account_id)
         return response
 
-
+    def credit_user_request(
+            self,
+            create_user_request: CreateUserRequest,
+            account_id,
+            amount,
+            term_months
+    ):
+        credit_payload = CreditRequest(
+            accountId=account_id,
+            amount=amount,
+            termMonths=term_months
+        )
+        response = ValidateCrudRequester(
+            RequestSpecs.auth_headers(
+                username=create_user_request.username,
+                password=create_user_request.password
+            ),
+            Endpoint.CREDIT_REQUEST,
+            ResponseSpecs.request_created()
+        ).post(credit_payload)
+        return response

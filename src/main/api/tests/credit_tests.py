@@ -1,12 +1,33 @@
 import pytest
-from src.main.api.configs.config import CREDIT_REQUEST, CREDIT_REPAY, CREDIT_HISTORY
-from src.main.api.utils.request import post, get
+
+from src.main.api.generators.model_generator import RandomModelGenerator
+from src.main.api.models.create_user_request import CreateUserRequest
 
 
 class TestCredit:
-    def test_credit_request(self, credit_request, create_credit_user_account):
-        assert credit_request.json()["id"] == create_credit_user_account.json()["id"]
-        assert credit_request.json()["amount"] == credit_request.json()["balance"]
+    @pytest.mark.known_bug("Expected 'accountId' instead of 'id' in response")
+    def test_credit_request(
+            self,
+            api_manager,
+            created_obj
+    ):
+        user_request = RandomModelGenerator.generate(CreateUserRequest)
+
+        user_response = api_manager.admin_steps.credit_user(user_request)
+        created_obj.append(user_response)
+
+        account_response = api_manager.user_steps.create_account(user_request)
+        account_id = account_response.id
+
+        response = api_manager.user_steps.credit_user_request(
+            create_user_request=user_request,
+            account_id=account_id,
+            amount=5000,
+            term_months=12
+        )
+        assert response.id == account_id
+        assert response.amount == response.balance
+
 
     def test_credit_repay(self, credit_repay, credit_request):
         assert credit_request.json()["amount"] == credit_repay.json()["amountDeposited"]
@@ -57,4 +78,3 @@ class TestCredit:
             expected_status=403
         )
         assert '403 Forbidden' in response.text
-
