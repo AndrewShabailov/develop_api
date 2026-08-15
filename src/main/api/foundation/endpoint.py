@@ -1,5 +1,7 @@
 from enum import Enum
 from typing import Optional, Type, List, Any
+
+from src.main.api.models.account_transactions_response import AccountTransactionsResponse
 from src.main.api.models.base_model import BaseModel
 from dataclasses import dataclass
 from src.main.api.models.create_account_response import CreateAccountResponse
@@ -66,7 +68,7 @@ class Endpoint(Enum):
     GET_ACCOUNT_TRANSACTIONS = EndpointConfiguration(
         request_model=None,
         url="/account/transactions",
-        response_model=None
+        response_model=AccountTransactionsResponse
     )
 
     ADMIN_GET_USERS = EndpointConfiguration(
