@@ -6,7 +6,6 @@ from src.main.api.foundation.endpoint import Endpoint
 from src.main.api.foundation.requesters.crud_requester import CrudRequester
 from src.main.api.generators.model_generator import RandomModelGenerator
 from src.main.api.models.create_user_request import CreateUserRequest
-from src.main.api.models.login_user_request import LoginUserRequest
 from src.main.api.specs.request_specs import RequestSpecs
 from src.main.api.specs.response_specs import ResponseSpecs
 
@@ -122,7 +121,7 @@ class TestCredit:
         "This test returned wrong error."
         "Expected message - 'Repayment amount exceeds remaining debt'"
     )
-    def test_credit_repay_with_less_amount(
+    def test_negative_credit_repay_with_less_amount(
             self,
             api_manager,
             created_obj
@@ -157,7 +156,6 @@ class TestCredit:
                 "amount": 1
             }
         )
-        print(response.json()["error"])
         assert response.json()["error"] == (f"The amount is not enough."
                                             f" Credit balance: -{int(credit_response.balance)}")
 

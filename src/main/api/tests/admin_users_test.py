@@ -32,7 +32,7 @@ class TestAdmin:
             ("Maxx6", "PAS!SWRRD")
         ]
     )
-    def test_create_user_invalid(self, username, password, api_manager):
+    def test_negative_create_user_invalid(self, username, password, api_manager):
         create_user_request = CreateUserRequest(username=username, password=password, role="ROLE_USER")
         api_manager.admin_steps.create_invalid_user(create_user_request)
 
