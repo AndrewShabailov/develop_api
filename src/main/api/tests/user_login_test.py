@@ -11,24 +11,23 @@ from src.main.api.specs.response_specs import ResponseSpecs
 @pytest.mark.api
 class TestUserLogin:
     def test_login_admin(self, api_manager):
-        login_request = LoginUserRequest(username="admin", password="123456")
-        response = api_manager.admin_steps.login_user(login_request)
+        login_user_request = LoginUserRequest(username="admin", password="123456")
+        response = api_manager.admin_steps.login_user(login_user_request)
 
-        assert login_request.username == response.user.username
+        assert login_user_request.username == response.user.username
         assert response.user.role == "ROLE_ADMIN"
 
     def test_login_user(self, api_manager):
-        user_data = RandomModelGenerator.generate(CreateUserRequest)
-        api_manager.admin_steps.create_user(user_data)
+        user = RandomModelGenerator.generate(CreateUserRequest)
+        api_manager.admin_steps.create_user(user)
+        login_user_request = LoginUserRequest(username=user.username, password=user.password)
+        response = api_manager.admin_steps.login_user(login_user_request)
 
-        login_request = LoginUserRequest(username=user_data.username, password=user_data.password)
-        response = api_manager.admin_steps.login_user(login_request)
-
-        assert user_data.username == response.user.username
+        assert user.username == response.user.username
         assert response.user.role == "ROLE_USER"
         assert 'token' in response.model_dump_json()
-        assert user_data.username == response.user.username,\
-            f"Username is NOT equal {user_data.username}"
+        assert user.username == response.user.username,\
+            f"Username is NOT equal {user.username}"
 
     @pytest.mark.known_bug("Response has wrong error message. Expected: 'Missing username or password'")
     @pytest.mark.parametrize("invalid_payload",
@@ -53,9 +52,11 @@ class TestUserLogin:
 
     def test_negative_login_with_invalid_admin_name(self, api_manager):
         login_request = LoginUserRequest(username="adminn", password="123456")
+
         response = CrudRequester(
             RequestSpecs.base_headers(),
             Endpoint.LOGIN_USER,
             ResponseSpecs.request_unauthorized()
         ).post(login_request)
+
         assert response.json()["error"] == "Invalid credentials"

@@ -45,7 +45,6 @@ class TestCreateAccount:
             create_user_request
     ):
         account_response_1 = api_manager.user_steps.create_account(create_user_request)
-
         initial_balance = account_response_1.balance
         deposit = random.randint(1000, 9000)
         account_1_balance = initial_balance + deposit
@@ -56,6 +55,7 @@ class TestCreateAccount:
             account_id=account_id_1,
             amount=deposit
         )
+
         transfer_amount = random.randint(500, int(account_1_balance))
         account_response_2 = api_manager.user_steps.create_account(create_user_request)
         account_id_2 = account_response_2.id
@@ -66,6 +66,7 @@ class TestCreateAccount:
             to_account_id=account_id_2,
             amount=transfer_amount
         )
+
         assert response.fromAccountId == account_id_1
         assert response.toAccountId == account_id_2
         assert response.fromAccountIdBalance == account_1_balance - transfer_amount
@@ -84,21 +85,23 @@ class TestCreateAccount:
             account_id=account_id,
             amount=deposit_amount
         )
+
         response = api_manager.user_steps.get_account_transactions(
             create_user_request,
             account_id=account_id
         )
-        assert len(response.transactions) > 0, "Transactions list is empty"
 
         transaction_id = response.transactions[0].transactionId
+
+        assert len(response.transactions) > 0, "Transactions list is empty"
         assert transaction_id in [t.transactionId for t in response.transactions]
 
-    def test_negative_admin_create_his_bank_account(
+    def test_negative_admin_creates_his_bank_account(
             self,
             api_manager,
             create_user_request
     ):
-        api_manager.user_steps.create_account(create_user_request)
+
         response = CrudRequester(
             RequestSpecs.auth_headers(
                 username=api_manager.admin_steps.username,
@@ -107,6 +110,7 @@ class TestCreateAccount:
             Endpoint.CREATE_ACCOUNT,
             ResponseSpecs.request_forbidden()
         ).post(create_user_request)
+
         assert response.json()["error"] == "Admins cannot create bank accounts"
 
     @pytest.mark.known_bug('Response has wrong JSON key "message". Expected: "error"')
@@ -129,6 +133,7 @@ class TestCreateAccount:
                 amount=deposit
             )
         )
+
         assert response.json()["message"] == "JWT Token not found"
 
     @pytest.mark.known_bug('Response has wrong "error". Expected: "Invalid request body"')
@@ -138,10 +143,7 @@ class TestCreateAccount:
             create_user_request
     ):
         account_response_1 = api_manager.user_steps.create_account(create_user_request)
-
-        initial_balance = account_response_1.balance
         deposit = random.randint(1000, 9000)
-        account_1_balance = initial_balance + deposit
         account_id_1 = account_response_1.id
 
         api_manager.user_steps.deposit_account(
@@ -149,6 +151,7 @@ class TestCreateAccount:
             account_id=account_id_1,
             amount=deposit
         )
+
         account_response_2 = api_manager.user_steps.create_account(create_user_request)
         account_id_2 = account_response_2.id
 
@@ -165,6 +168,7 @@ class TestCreateAccount:
                 "toAccountId": account_id_2
             }
         )
+
         assert response.json()["error"] == "Amount is required"
 
     def test_negative_get_transactions_history_with_non_existing_user_id(

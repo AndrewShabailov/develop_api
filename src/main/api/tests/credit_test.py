@@ -14,13 +14,10 @@ class TestCredit:
     @pytest.mark.known_bug("Expected 'accountId' instead of 'id' in response")
     def test_credit_request(
             self,
-            api_manager,
-            created_obj
+            api_manager
     ):
         user_request = RandomModelGenerator.generate(CreateUserRequest)
-        user_response = api_manager.admin_steps.credit_user(user_request)
-        created_obj.append(user_response)
-
+        api_manager.admin_steps.credit_user(user_request)
         account_response = api_manager.user_steps.create_account(user_request)
         account_id = account_response.id
 
@@ -30,18 +27,17 @@ class TestCredit:
             amount=random.randint(5000, 15000),
             term_months=random.randint(1, 12)
         )
+
         assert response.id == account_id
         assert response.amount == response.balance
 
 
     def test_credit_repay(
             self,
-            api_manager,
-            created_obj
+            api_manager
     ):
         user_request = RandomModelGenerator.generate(CreateUserRequest)
-        user_response = api_manager.admin_steps.credit_user(user_request)
-        created_obj.append(user_response)
+        api_manager.admin_steps.credit_user(user_request)
 
         account_response = api_manager.user_steps.create_account(user_request)
         account_id = account_response.id
@@ -67,12 +63,10 @@ class TestCredit:
 
     def test_credit_history(
             self,
-            api_manager,
-            created_obj
+            api_manager
     ):
         user_request = RandomModelGenerator.generate(CreateUserRequest)
-        user_response = api_manager.admin_steps.credit_user(user_request)
-        created_obj.append(user_response)
+        api_manager.admin_steps.credit_user(user_request)
 
         account_response = api_manager.user_steps.create_account(user_request)
         account_id = account_response.id
@@ -91,12 +85,10 @@ class TestCredit:
     @pytest.mark.known_bug('This test should return 422 status code. 400 - temporary solution')
     def test_negative_credit_request_with_over_amount(
             self,
-            api_manager,
-            created_obj
+            api_manager
     ):
         user_request = RandomModelGenerator.generate(CreateUserRequest)
-        user_response = api_manager.admin_steps.credit_user(user_request)
-        created_obj.append(user_response)
+        api_manager.admin_steps.credit_user(user_request)
 
         account_response = api_manager.user_steps.create_account(user_request)
         account_id = account_response.id
@@ -123,12 +115,10 @@ class TestCredit:
     )
     def test_negative_credit_repay_with_less_amount(
             self,
-            api_manager,
-            created_obj
+            api_manager
     ):
         user_request = RandomModelGenerator.generate(CreateUserRequest)
-        user_response = api_manager.admin_steps.credit_user(user_request)
-        created_obj.append(user_response)
+        api_manager.admin_steps.credit_user(user_request)
 
         account_response = api_manager.user_steps.create_account(user_request)
         account_id = account_response.id
@@ -169,4 +159,5 @@ class TestCredit:
             Endpoint.GET_CREDIT_HISTORY,
             ResponseSpecs.request_forbidden()
         ).get()
+
         assert response.json()["detail"] == "Forbidden: ROLE_CREDIT access required"

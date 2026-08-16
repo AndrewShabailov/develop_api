@@ -65,12 +65,10 @@ class TestAdmin:
         api_manager.admin_steps.create_user(create_user_request)
         user_count_before = len(api_manager.admin_steps.get_users())
         delete_result = api_manager.admin_steps.delete_all_users().json()
+        users_after = api_manager.admin_steps.get_users()
 
         assert user_count_before == delete_result["deleted_count"] + 1
         assert delete_result["message"] == "All users except current admin deleted successfully"
-
-        users_after = api_manager.admin_steps.get_users()
-
         assert len(users_after) == 1, f"There are {len(users_after)} users"
 
     @pytest.mark.known_bug('Response has wrong error message. Expected: "User already exists"')
@@ -80,6 +78,7 @@ class TestAdmin:
     )
     def test_create_user_with_the_same_name_negative(self, api_manager, create_user_request):
         api_manager.admin_steps.create_user(create_user_request)
+
         response = CrudRequester(
             RequestSpecs.auth_headers(
                 username=api_manager.admin_steps.username,
@@ -93,7 +92,8 @@ class TestAdmin:
 
     @pytest.mark.known_bug('Response has wrong status code, error message.'
                            'Expected: status - 403, error - Admin access required')
-    def test_all_users_negative(self, create_user_request):
+    def test_negative_user_gets_list_of_all_users(self, create_user_request):
+
         response = CrudRequester(
             RequestSpecs.auth_headers(
                 username=create_user_request.username,
@@ -107,6 +107,7 @@ class TestAdmin:
 
 
     def test_delete_non_existing_user_negative(self, api_manager):
+
         response = CrudRequester(
             RequestSpecs.auth_headers(
                 username=api_manager.admin_steps.username,
@@ -115,11 +116,13 @@ class TestAdmin:
             Endpoint.ADMIN_DELETE_USER,
             ResponseSpecs.request_not_found()
         ).delete(0)
+
         assert response.json()["error"] == "User not found"
 
     @pytest.mark.known_bug('Response has wrong status code, error message.'
                            'Expected: status - 403, error - Admin access required')
     def test_delete_all_users_negative(self, create_user_request):
+
         response = CrudRequester(
             RequestSpecs.auth_headers(
                 username=create_user_request.username,
@@ -128,4 +131,5 @@ class TestAdmin:
             Endpoint.ADMIN_DELETE_ALL_USERS,
             ResponseSpecs.request_unauthorized()
         ).delete()
+
         assert response.json()["error"] == "Forbidden: Admin access required"
