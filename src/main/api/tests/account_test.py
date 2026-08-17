@@ -1,5 +1,4 @@
 import pytest
-import random
 
 from src.main.api.classes.api_manager import ApiManager
 from src.main.api.foundation.endpoint import Endpoint
@@ -24,22 +23,20 @@ class TestCreateAccount:
     def test_user_deposits_to_his_account(
             self,
             api_manager: ApiManager,
-            create_user_request: CreateUserRequest
+            create_user_request: CreateUserRequest,
+            new_account,
+            deposit_data
     ):
 
-        account_response = api_manager.user_steps.create_account(create_user_request)
-        initial_balance= account_response.balance
-        account_id = account_response.id
-        deposit = random.randint(1000, 9000)
-        expected_balance = initial_balance + deposit
-
         deposit_response = api_manager.user_steps.deposit_account(
-            create_user_request,
-            account_id=account_id,
-            amount=deposit
+            create_user_request=create_user_request,
+            account_id=new_account.id,
+            amount=deposit_data["amount"]
         )
-        assert deposit_response.balance == expected_balance,\
-            f"Deposit failed! Expected balance: {expected_balance}, but got: {deposit_response.balance}"
+
+        assert deposit_response.balance == deposit_data["expected_balance"], \
+            (f"Deposit failed! Expected balance: {deposit_data['expected_balance']},"
+             f" but got: {deposit_response.balance}")
 
     def test_user_transfers_to_his_account(
             self,

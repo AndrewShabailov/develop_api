@@ -54,3 +54,8 @@ class RandomModelGenerator:
         elif isinstance(field_type, type):
             return RandomModelGenerator.generate(field_type)
         return None
+
+    @staticmethod
+    def _generate_deposit_amount(field_type: type) -> int:
+        if field_type is int:
+            return random.randint(1000, 9000)
