@@ -1,8 +1,10 @@
 import pytest
 
 from src.main.api.classes.api_manager import ApiManager
+from src.main.api.fixtures.user_fixture import destination_account, account_with_deposit
 from src.main.api.foundation.endpoint import Endpoint
 from src.main.api.foundation.requesters.crud_requester import CrudRequester
+from src.main.api.models.create_account_response import CreateAccountResponse
 from src.main.api.models.create_user_request import CreateUserRequest
 from src.main.api.models.deposit_account_request import DepositAccountRequest
 from src.main.api.specs.request_specs import RequestSpecs
@@ -20,12 +22,13 @@ class TestCreateAccount:
         assert response.balance == 0.0, "Initial balance is NOT 0.0"
         assert response.id is not None, "Response does not contain 'id'"
 
+
     def test_user_deposits_to_his_account(
             self,
             api_manager: ApiManager,
             create_user_request: CreateUserRequest,
-            new_account,
-            deposit_data
+            new_account: CreateAccountResponse,
+            deposit_data: dict
     ):
 
         deposit_response = api_manager.user_steps.deposit_account(
@@ -38,62 +41,48 @@ class TestCreateAccount:
             (f"Deposit failed! Expected balance: {deposit_data['expected_balance']},"
              f" but got: {deposit_response.balance}")
 
+
     def test_user_transfers_to_his_account(
             self,
             api_manager: ApiManager,
-            create_user_request: CreateUserRequest
+            create_user_request: CreateUserRequest,
+            account_with_deposit: dict,
+            destination_account: int,
+            transfer_data: dict
     ):
-        account_response_1 = api_manager.user_steps.create_account(create_user_request)
-        initial_balance = account_response_1.balance
-        deposit = random.randint(1000, 9000)
-        account_1_balance = initial_balance + deposit
-        account_id_1 = account_response_1.id
-
-        api_manager.user_steps.deposit_account(
-            create_user_request,
-            account_id=account_id_1,
-            amount=deposit
-        )
-
-        transfer_amount = random.randint(500, int(account_1_balance))
-        account_response_2 = api_manager.user_steps.create_account(create_user_request)
-        account_id_2 = account_response_2.id
 
         response = api_manager.user_steps.transfer_account(
             create_user_request,
-            from_account_id=account_id_1,
-            to_account_id=account_id_2,
-            amount=transfer_amount
+            from_account_id=account_with_deposit["account_id"],
+            to_account_id=destination_account,
+            amount=transfer_data["amount"]
         )
 
-        assert response.fromAccountId == account_id_1
-        assert response.toAccountId == account_id_2
-        assert response.fromAccountIdBalance == account_1_balance - transfer_amount
+        assert response.fromAccountId == account_with_deposit["account_id"], "Accounts have different id"
+        assert response.toAccountId == destination_account, "Accounts have different id"
+        assert response.fromAccountIdBalance == transfer_data["expected_balance"], \
+            (f"Transfer balance check failed! Expected: {transfer_data['expected_balance']},"
+             f" got: {response.fromAccountIdBalance}")
+
 
     def test_admin_get_account_transactions(
             self,
             api_manager: ApiManager,
-            create_user_request: CreateUserRequest
+            create_user_request: CreateUserRequest,
+            account_with_deposit: dict
     ):
-        account_response = api_manager.user_steps.create_account(create_user_request)
-        account_id = account_response.id
-
-        deposit_amount = random.randint(1000, 9000)
-        api_manager.user_steps.deposit_account(
-            create_user_request,
-            account_id=account_id,
-            amount=deposit_amount
-        )
 
         response = api_manager.user_steps.get_account_transactions(
             create_user_request,
-            account_id=account_id
+            account_id=account_with_deposit["account_id"]
         )
 
         transaction_id = response.transactions[0].transactionId
 
         assert len(response.transactions) > 0, "Transactions list is empty"
-        assert transaction_id in [t.transactionId for t in response.transactions]
+        assert transaction_id in [t.transactionId for t in response.transactions],\
+            "Transaction id is not in transactions list"
+
 
     def test_negative_admin_creates_his_bank_account(
             self,
@@ -116,11 +105,10 @@ class TestCreateAccount:
     def test_negative_user_deposits_to_his_account_with_no_token(
             self,
             api_manager: ApiManager,
-            create_user_request: CreateUserRequest
+            create_user_request: CreateUserRequest,
+            deposit_data: dict,
+            new_account: CreateAccountResponse
     ):
-        account_response = api_manager.user_steps.create_account(create_user_request)
-        account_id = account_response.id
-        deposit = random.randint(1000, 9000)
 
         response = CrudRequester(
             RequestSpecs.base_headers(),
@@ -128,8 +116,8 @@ class TestCreateAccount:
             ResponseSpecs.request_unauthorized()
         ).post(
             DepositAccountRequest(
-                accountId=account_id,
-                amount=deposit
+                accountId=new_account.id,
+                amount=deposit_data["amount"]
             )
         )
 
@@ -139,20 +127,10 @@ class TestCreateAccount:
     def test_negative_user_transfer_with_no_amount_in_body(
             self,
             api_manager: ApiManager,
-            create_user_request: CreateUserRequest
+            create_user_request: CreateUserRequest,
+            account_with_deposit: dict,
+            destination_account: int
     ):
-        account_response_1 = api_manager.user_steps.create_account(create_user_request)
-        deposit = random.randint(1000, 9000)
-        account_id_1 = account_response_1.id
-
-        api_manager.user_steps.deposit_account(
-            create_user_request,
-            account_id=account_id_1,
-            amount=deposit
-        )
-
-        account_response_2 = api_manager.user_steps.create_account(create_user_request)
-        account_id_2 = account_response_2.id
 
         response = CrudRequester(
             RequestSpecs.auth_headers(
@@ -163,18 +141,21 @@ class TestCreateAccount:
             ResponseSpecs.request_bad()
         ).post(
             {
-                "fromAccountId": account_id_1,
-                "toAccountId": account_id_2
+                "fromAccountId": account_with_deposit["account_id"],
+                "toAccountId": destination_account
             }
         )
 
-        assert response.json()["error"] == "Amount is required"
+        assert response.json()["error"] == "Amount is required",\
+            f"Unexpected error: {response.json()['error']}"
+
 
     def test_negative_get_transactions_history_with_non_existing_user_id(
             self,
             api_manager: ApiManager,
             create_user_request: CreateUserRequest
     ):
+
         response = CrudRequester(
             RequestSpecs.auth_headers(
                 username=create_user_request.username,
@@ -184,4 +165,5 @@ class TestCreateAccount:
             ResponseSpecs.request_bad()
         ).get(entity_id=0)
 
-        assert response.json()["error"] == "Invalid account ID format"
+        assert response.json()["error"] == "Invalid account ID format",\
+            f"Unexpected error: {response.json()['error']}"
