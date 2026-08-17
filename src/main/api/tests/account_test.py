@@ -121,7 +121,8 @@ class TestCreateAccount:
             )
         )
 
-        assert response.json()["message"] == "JWT Token not found"
+        assert response.json()["message"] == "JWT Token not found",\
+            f"Unexpected error message: {response.json()['message']}"
 
     @pytest.mark.known_bug('Response has wrong "error". Expected: "Invalid request body"')
     def test_negative_user_transfer_with_no_amount_in_body(

@@ -35,18 +35,26 @@ class TestAdmin:
         ]
     )
     def test_negative_create_user_invalid(self, username: str, password: str, api_manager: ApiManager):
-        create_user_request = CreateUserRequest(username=username, password=password, role="ROLE_USER")
+        create_user_request = CreateUserRequest(
+            username=username,
+            password=password,
+            role="ROLE_USER"
+        )
         api_manager.admin_steps.create_invalid_user(create_user_request)
 
     @pytest.mark.parametrize(
         "create_user_request",
         [RandomModelGenerator.generate(CreateUserRequest)]
     )
-    def test_all_users(self, api_manager: ApiManager, create_user_request: CreateUserRequest):
+    def test_all_users(
+            self,
+            api_manager: ApiManager,
+            create_user_request: CreateUserRequest
+    ):
         created_user = api_manager.admin_steps.create_user(create_user_request)
         users_list = api_manager.admin_steps.get_users()
 
-        assert created_user.username in [user.username for user in users_list]
+        assert created_user.username in [user.username for user in users_list], "User not created"
 
     @pytest.mark.parametrize(
         "create_user_request",
@@ -63,13 +71,17 @@ class TestAdmin:
         "create_user_request",
         [RandomModelGenerator.generate(CreateUserRequest)]
     )
-    def test_delete_all_users(self, api_manager: ApiManager, create_user_request: CreateUserRequest):
+    def test_delete_all_users(
+            self,
+            api_manager: ApiManager,
+            create_user_request: CreateUserRequest
+    ):
         api_manager.admin_steps.create_user(create_user_request)
         user_count_before = len(api_manager.admin_steps.get_users())
         delete_result = api_manager.admin_steps.delete_all_users().json()
         users_after = api_manager.admin_steps.get_users()
 
-        assert user_count_before == delete_result["deleted_count"] + 1
+        assert user_count_before == delete_result["deleted_count"] + 1, "Wrong number of deleted users"
         assert delete_result["message"] == "All users except current admin deleted successfully"
         assert len(users_after) == 1, f"There are {len(users_after)} users"
 
@@ -90,7 +102,8 @@ class TestAdmin:
             ResponseSpecs.request_conflict()
         ).post(create_user_request)
 
-        assert response.json()["error"] == "User already has maximum number of accounts(2)"
+        assert response.json()["error"] == "User already has maximum number of accounts(2)",\
+            f"Unexpected error message: {response.json()['error']}"
 
     @pytest.mark.known_bug('Response has wrong status code, error message.'
                            'Expected: status - 403, error - Admin access required')
@@ -105,7 +118,8 @@ class TestAdmin:
             ResponseSpecs.request_unauthorized()
         ).get()
 
-        assert response.json()["error"] == "Forbidden: Admin access required"
+        assert response.json()["error"] == "Forbidden: Admin access required",\
+            f"Unexpected error message: {response.json()['error']}"
 
 
     def test_delete_non_existing_user_negative(self, api_manager: ApiManager):
@@ -119,7 +133,8 @@ class TestAdmin:
             ResponseSpecs.request_not_found()
         ).delete(0)
 
-        assert response.json()["error"] == "User not found"
+        assert response.json()["error"] == "User not found",\
+            f"Unexpected error: {response.json()['error']}"
 
     @pytest.mark.known_bug('Response has wrong status code, error message.'
                            'Expected: status - 403, error - Admin access required')
@@ -134,4 +149,5 @@ class TestAdmin:
             ResponseSpecs.request_unauthorized()
         ).delete()
 
-        assert response.json()["error"] == "Forbidden: Admin access required"
+        assert response.json()["error"] == "Forbidden: Admin access required",\
+            f"Unexpected error: {response.json()['error']}"

@@ -32,13 +32,21 @@ class TestUserLogin:
             f"Username is NOT equal {user.username}"
 
     @pytest.mark.known_bug("Response has wrong error message. Expected: 'Missing username or password'")
-    @pytest.mark.parametrize("invalid_payload",
-                             [
-                                 {"username": "", "password": "Pas!sw0rd"},
-                                 {"username": "TestUser", "password": ""}
-                             ]
-                             )
-    def test_negative_missing_login_or_password(self, invalid_payload: dict):
+    @pytest.mark.parametrize(
+        "invalid_payload, expected_error",
+        [
+            (
+                    {"username": "", "password": "Pas!sw0rd"},
+                    'The key "username" must be a non-empty string.'
+            ),
+            (
+                    {"username": "TestUser", "password": ""},
+                    'The key "password" must be a non-empty string.'
+            ),
+        ]
+    )
+    def test_negative_missing_login_or_password(self, invalid_payload: dict, expected_error: str):
+
         response = CrudRequester(
             RequestSpecs.base_headers(),
             Endpoint.LOGIN_USER,
@@ -46,10 +54,8 @@ class TestUserLogin:
         ).post(
             invalid_payload
         )
-        invalid_key = [k for k, v in invalid_payload.items() if v == ""][0]
-        expected_error = f'The key "{invalid_key}" must be a non-empty string.'
 
-        assert response.json()["error"] == expected_error
+        assert response.json()["error"] == expected_error, f"Unexpected error: {expected_error}"
 
 
     def test_negative_login_with_invalid_admin_name(self, api_manager: ApiManager):
@@ -61,4 +67,5 @@ class TestUserLogin:
             ResponseSpecs.request_unauthorized()
         ).post(login_request)
 
-        assert response.json()["error"] == "Invalid credentials"
+        assert response.json()["error"] == "Invalid credentials",\
+            f"Unexpected error: {response.json()['error']}"
