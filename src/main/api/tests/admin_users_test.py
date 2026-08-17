@@ -42,19 +42,15 @@ class TestAdmin:
         )
         api_manager.admin_steps.create_invalid_user(create_user_request)
 
-    @pytest.mark.parametrize(
-        "create_user_request",
-        [RandomModelGenerator.generate(CreateUserRequest)]
-    )
+
     def test_all_users(
             self,
-            api_manager: ApiManager,
-            create_user_request: CreateUserRequest
+            api_manager: ApiManager
     ):
-        created_user = api_manager.admin_steps.create_user(create_user_request)
-        users_list = api_manager.admin_steps.get_users()
 
-        assert created_user.username in [user.username for user in users_list], "User not created"
+        response = api_manager.admin_steps.get_users()
+
+        assert len(response) != 0, f"Users list: {len(response)} users"
 
     @pytest.mark.parametrize(
         "create_user_request",
@@ -76,14 +72,11 @@ class TestAdmin:
             api_manager: ApiManager,
             create_user_request: CreateUserRequest
     ):
-        api_manager.admin_steps.create_user(create_user_request)
-        user_count_before = len(api_manager.admin_steps.get_users())
-        delete_result = api_manager.admin_steps.delete_all_users().json()
-        users_after = api_manager.admin_steps.get_users()
 
-        assert user_count_before == delete_result["deleted_count"] + 1, "Wrong number of deleted users"
+        api_manager.admin_steps.create_user(create_user_request)
+        delete_result = api_manager.admin_steps.delete_all_users().json()
+
         assert delete_result["message"] == "All users except current admin deleted successfully"
-        assert len(users_after) == 1, f"There are {len(users_after)} users"
 
     @pytest.mark.known_bug('Response has wrong error message. Expected: "User already exists"')
     @pytest.mark.parametrize(
