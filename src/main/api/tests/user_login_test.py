@@ -1,4 +1,6 @@
 import pytest
+
+from src.main.api.classes.api_manager import ApiManager
 from src.main.api.foundation.endpoint import Endpoint
 from src.main.api.foundation.requesters.crud_requester import CrudRequester
 from src.main.api.generators.model_generator import RandomModelGenerator
@@ -10,14 +12,14 @@ from src.main.api.specs.response_specs import ResponseSpecs
 
 @pytest.mark.api
 class TestUserLogin:
-    def test_login_admin(self, api_manager):
+    def test_login_admin(self, api_manager: ApiManager):
         login_user_request = LoginUserRequest(username="admin", password="123456")
         response = api_manager.admin_steps.login_user(login_user_request)
 
         assert login_user_request.username == response.user.username
         assert response.user.role == "ROLE_ADMIN"
 
-    def test_login_user(self, api_manager):
+    def test_login_user(self, api_manager: ApiManager):
         user = RandomModelGenerator.generate(CreateUserRequest)
         api_manager.admin_steps.create_user(user)
         login_user_request = LoginUserRequest(username=user.username, password=user.password)
@@ -36,7 +38,7 @@ class TestUserLogin:
                                  {"username": "TestUser", "password": ""}
                              ]
                              )
-    def test_negative_missing_login_or_password(self, invalid_payload):
+    def test_negative_missing_login_or_password(self, invalid_payload: dict):
         response = CrudRequester(
             RequestSpecs.base_headers(),
             Endpoint.LOGIN_USER,
@@ -50,7 +52,7 @@ class TestUserLogin:
         assert response.json()["error"] == expected_error
 
 
-    def test_negative_login_with_invalid_admin_name(self, api_manager):
+    def test_negative_login_with_invalid_admin_name(self, api_manager: ApiManager):
         login_request = LoginUserRequest(username="adminn", password="123456")
 
         response = CrudRequester(

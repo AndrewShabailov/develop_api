@@ -1,6 +1,7 @@
 import random
 import pytest
 
+from src.main.api.classes.api_manager import ApiManager
 from src.main.api.fixtures.api_fixture import api_manager
 from src.main.api.foundation.endpoint import Endpoint
 from src.main.api.foundation.requesters.crud_requester import CrudRequester
@@ -14,7 +15,7 @@ class TestCredit:
     @pytest.mark.known_bug("Expected 'accountId' instead of 'id' in response")
     def test_credit_request(
             self,
-            api_manager
+            api_manager: ApiManager
     ):
         user_request = RandomModelGenerator.generate(CreateUserRequest)
         api_manager.admin_steps.credit_user(user_request)
@@ -34,7 +35,7 @@ class TestCredit:
 
     def test_credit_repay(
             self,
-            api_manager
+            api_manager: ApiManager
     ):
         user_request = RandomModelGenerator.generate(CreateUserRequest)
         api_manager.admin_steps.credit_user(user_request)
@@ -63,7 +64,7 @@ class TestCredit:
 
     def test_credit_history(
             self,
-            api_manager
+            api_manager: ApiManager
     ):
         user_request = RandomModelGenerator.generate(CreateUserRequest)
         api_manager.admin_steps.credit_user(user_request)
@@ -85,7 +86,7 @@ class TestCredit:
     @pytest.mark.known_bug('This test should return 422 status code. 400 - temporary solution')
     def test_negative_credit_request_with_over_amount(
             self,
-            api_manager
+            api_manager: ApiManager
     ):
         user_request = RandomModelGenerator.generate(CreateUserRequest)
         api_manager.admin_steps.credit_user(user_request)
@@ -115,7 +116,7 @@ class TestCredit:
     )
     def test_negative_credit_repay_with_less_amount(
             self,
-            api_manager
+            api_manager: ApiManager
     ):
         user_request = RandomModelGenerator.generate(CreateUserRequest)
         api_manager.admin_steps.credit_user(user_request)
@@ -152,7 +153,7 @@ class TestCredit:
     @pytest.mark.known_bug(
         "This test returned wrong error."
         "Expected message - 'Access denied'")
-    def test_negative_get_credit_history_with_admin_role(self, api_manager):
+    def test_negative_get_credit_history_with_admin_role(self, api_manager: ApiManager):
 
         response = CrudRequester(
             api_manager.admin_steps.auth,

@@ -1,4 +1,6 @@
 import pytest
+
+from src.main.api.classes.api_manager import ApiManager
 from src.main.api.foundation.endpoint import Endpoint
 from src.main.api.foundation.requesters.crud_requester import CrudRequester
 from src.main.api.generators.model_generator import RandomModelGenerator
@@ -12,7 +14,7 @@ class TestAdmin:
         "create_user_request",
         [RandomModelGenerator.generate(CreateUserRequest)]
     )
-    def test_create_user_valid(self, api_manager, create_user_request):
+    def test_create_user_valid(self, api_manager: ApiManager, create_user_request: CreateUserRequest):
         response = api_manager.admin_steps.create_user(create_user_request)
 
         assert create_user_request.username == response.username
@@ -32,7 +34,7 @@ class TestAdmin:
             ("Maxx6", "PAS!SWRRD")
         ]
     )
-    def test_negative_create_user_invalid(self, username, password, api_manager):
+    def test_negative_create_user_invalid(self, username: str, password: str, api_manager: ApiManager):
         create_user_request = CreateUserRequest(username=username, password=password, role="ROLE_USER")
         api_manager.admin_steps.create_invalid_user(create_user_request)
 
@@ -40,7 +42,7 @@ class TestAdmin:
         "create_user_request",
         [RandomModelGenerator.generate(CreateUserRequest)]
     )
-    def test_all_users(self, api_manager, create_user_request):
+    def test_all_users(self, api_manager: ApiManager, create_user_request: CreateUserRequest):
         created_user = api_manager.admin_steps.create_user(create_user_request)
         users_list = api_manager.admin_steps.get_users()
 
@@ -50,7 +52,7 @@ class TestAdmin:
         "create_user_request",
         [RandomModelGenerator.generate(CreateUserRequest)]
     )
-    def test_delete_user(self, api_manager, create_user_request):
+    def test_delete_user(self, api_manager: ApiManager, create_user_request: CreateUserRequest):
         created_user = api_manager.admin_steps.create_user(create_user_request)
         delete_response = api_manager.admin_steps.delete_user(created_user.id)
 
@@ -61,7 +63,7 @@ class TestAdmin:
         "create_user_request",
         [RandomModelGenerator.generate(CreateUserRequest)]
     )
-    def test_delete_all_users(self, api_manager, create_user_request):
+    def test_delete_all_users(self, api_manager: ApiManager, create_user_request: CreateUserRequest):
         api_manager.admin_steps.create_user(create_user_request)
         user_count_before = len(api_manager.admin_steps.get_users())
         delete_result = api_manager.admin_steps.delete_all_users().json()
@@ -76,7 +78,7 @@ class TestAdmin:
         "create_user_request",
         [RandomModelGenerator.generate(CreateUserRequest)]
     )
-    def test_create_user_with_the_same_name_negative(self, api_manager, create_user_request):
+    def test_create_user_with_the_same_name_negative(self, api_manager: ApiManager, create_user_request: CreateUserRequest):
         api_manager.admin_steps.create_user(create_user_request)
 
         response = CrudRequester(
@@ -92,7 +94,7 @@ class TestAdmin:
 
     @pytest.mark.known_bug('Response has wrong status code, error message.'
                            'Expected: status - 403, error - Admin access required')
-    def test_negative_user_gets_list_of_all_users(self, create_user_request):
+    def test_negative_user_gets_list_of_all_users(self, create_user_request: CreateUserRequest):
 
         response = CrudRequester(
             RequestSpecs.auth_headers(
@@ -106,7 +108,7 @@ class TestAdmin:
         assert response.json()["error"] == "Forbidden: Admin access required"
 
 
-    def test_delete_non_existing_user_negative(self, api_manager):
+    def test_delete_non_existing_user_negative(self, api_manager: ApiManager):
 
         response = CrudRequester(
             RequestSpecs.auth_headers(
@@ -121,7 +123,7 @@ class TestAdmin:
 
     @pytest.mark.known_bug('Response has wrong status code, error message.'
                            'Expected: status - 403, error - Admin access required')
-    def test_delete_all_users_negative(self, create_user_request):
+    def test_delete_all_users_negative(self, create_user_request: CreateUserRequest):
 
         response = CrudRequester(
             RequestSpecs.auth_headers(

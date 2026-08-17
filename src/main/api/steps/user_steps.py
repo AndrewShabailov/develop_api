@@ -28,8 +28,8 @@ class UserSteps(BaseSteps):
     def deposit_account(
             self,
             create_user_request: CreateUserRequest,
-            account_id,
-            amount
+            account_id: int,
+            amount:float
     ):
         deposit_payload = DepositAccountRequest(
             accountId=account_id,
@@ -48,9 +48,9 @@ class UserSteps(BaseSteps):
     def transfer_account(
             self,
             create_user_request: CreateUserRequest,
-            from_account_id,
-            to_account_id,
-            amount
+            from_account_id: int,
+            to_account_id: int,
+            amount:float
     ):
         transfer_payload = TransferAccountRequest(
             fromAccountId=from_account_id,
@@ -70,7 +70,7 @@ class UserSteps(BaseSteps):
     def get_account_transactions(
             self,
             create_user_request: CreateUserRequest,
-            account_id
+            account_id: int
     ):
         response = ValidateCrudRequester(
             RequestSpecs.auth_headers(
@@ -85,9 +85,9 @@ class UserSteps(BaseSteps):
     def credit_user_request(
             self,
             create_user_request: CreateUserRequest,
-            account_id,
-            amount,
-            term_months
+            account_id: int,
+            amount: float,
+            term_months: int
     ):
         credit_payload = CreditRequest(
             accountId=account_id,
@@ -107,9 +107,9 @@ class UserSteps(BaseSteps):
     def credit_repay(
             self,
             create_user_request: CreateUserRequest,
-            credit_id,
-            account_id,
-            amount
+            credit_id: int,
+            account_id: int,
+            amount: float
     ):
         credit_repay_payload = CreditRepayRequest(
             creditId=credit_id,

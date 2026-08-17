@@ -1,8 +1,10 @@
 import pytest
 import random
 
+from src.main.api.classes.api_manager import ApiManager
 from src.main.api.foundation.endpoint import Endpoint
 from src.main.api.foundation.requesters.crud_requester import CrudRequester
+from src.main.api.models.create_user_request import CreateUserRequest
 from src.main.api.models.deposit_account_request import DepositAccountRequest
 from src.main.api.specs.request_specs import RequestSpecs
 from src.main.api.specs.response_specs import ResponseSpecs
@@ -11,8 +13,8 @@ from src.main.api.specs.response_specs import ResponseSpecs
 class TestCreateAccount:
     def test_admin_creates_new_account(
             self,
-            api_manager,
-            create_user_request
+            api_manager: ApiManager,
+            create_user_request: CreateUserRequest
     ):
         response = api_manager.user_steps.create_account(create_user_request)
 
@@ -21,8 +23,8 @@ class TestCreateAccount:
 
     def test_user_deposits_to_his_account(
             self,
-            api_manager,
-            create_user_request
+            api_manager: ApiManager,
+            create_user_request: CreateUserRequest
     ):
 
         account_response = api_manager.user_steps.create_account(create_user_request)
@@ -41,8 +43,8 @@ class TestCreateAccount:
 
     def test_user_transfers_to_his_account(
             self,
-            api_manager,
-            create_user_request
+            api_manager: ApiManager,
+            create_user_request: CreateUserRequest
     ):
         account_response_1 = api_manager.user_steps.create_account(create_user_request)
         initial_balance = account_response_1.balance
@@ -73,8 +75,8 @@ class TestCreateAccount:
 
     def test_admin_get_account_transactions(
             self,
-            api_manager,
-            create_user_request
+            api_manager: ApiManager,
+            create_user_request: CreateUserRequest
     ):
         account_response = api_manager.user_steps.create_account(create_user_request)
         account_id = account_response.id
@@ -98,8 +100,8 @@ class TestCreateAccount:
 
     def test_negative_admin_creates_his_bank_account(
             self,
-            api_manager,
-            create_user_request
+            api_manager: ApiManager,
+            create_user_request: CreateUserRequest
     ):
 
         response = CrudRequester(
@@ -116,8 +118,8 @@ class TestCreateAccount:
     @pytest.mark.known_bug('Response has wrong JSON key "message". Expected: "error"')
     def test_negative_user_deposits_to_his_account_with_no_token(
             self,
-            api_manager,
-            create_user_request
+            api_manager: ApiManager,
+            create_user_request: CreateUserRequest
     ):
         account_response = api_manager.user_steps.create_account(create_user_request)
         account_id = account_response.id
@@ -139,8 +141,8 @@ class TestCreateAccount:
     @pytest.mark.known_bug('Response has wrong "error". Expected: "Invalid request body"')
     def test_negative_user_transfer_with_no_amount_in_body(
             self,
-            api_manager,
-            create_user_request
+            api_manager: ApiManager,
+            create_user_request: CreateUserRequest
     ):
         account_response_1 = api_manager.user_steps.create_account(create_user_request)
         deposit = random.randint(1000, 9000)
@@ -173,8 +175,8 @@ class TestCreateAccount:
 
     def test_negative_get_transactions_history_with_non_existing_user_id(
             self,
-            api_manager,
-            create_user_request
+            api_manager: ApiManager,
+            create_user_request: CreateUserRequest
     ):
         response = CrudRequester(
             RequestSpecs.auth_headers(
