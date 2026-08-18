@@ -24,7 +24,7 @@ class TestAdmin:
         assert create_user_request.role == response.role
 
         user_from_db = User.get_user_by_username(db_session, create_user_request.username)
-        assert user_from_db.username == create_user_request.username
+        assert user_from_db.username == create_user_request.username, "Created user in not in DB"
 
     @pytest.mark.parametrize(
         "username, password",
@@ -40,14 +40,15 @@ class TestAdmin:
             ("Maxx6", "PAS!SWRRD")
         ]
     )
-    def test_negative_create_user_invalid(self, username: str, password: str, api_manager: ApiManager):
+    def test_negative_create_user_invalid(self, db_session: Session, username: str, password: str, api_manager: ApiManager):
         create_user_request = CreateUserRequest(
             username=username,
             password=password,
             role="ROLE_USER"
         )
         api_manager.admin_steps.create_invalid_user(create_user_request)
-
+        user_from_db = User.get_user_by_username(db_session, create_user_request.username)
+        assert user_from_db is None, "User is created"
 
     def test_all_users(
             self,
