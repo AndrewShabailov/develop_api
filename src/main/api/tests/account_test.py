@@ -6,12 +6,11 @@ from src.main.api.foundation.requesters.crud_requester import CrudRequester
 from src.main.api.models.create_account_response import CreateAccountResponse
 from src.main.api.models.create_user_request import CreateUserRequest
 from src.main.api.models.deposit_account_request import DepositAccountRequest
-from src.main.api.models.login_user_response import User
 from src.main.api.specs.request_specs import RequestSpecs
 from src.main.api.specs.response_specs import ResponseSpecs
 from src.main.api.db.crud.account_crud import AccountCrudDb as Account
 from src.main.api.db.crud.transaction_crud import TransactionCrudDb as Transaction
-from src.main.api.db.crud.user_crud import UserCrudDb
+from src.main.api.db.crud.user_crud import UserCrudDb as User
 from sqlalchemy.orm.session import Session
 
 
@@ -131,8 +130,8 @@ class TestCreateAccount:
 
         assert response.json()["error"] == "Admins cannot create bank accounts"
 
-        admin_user = UserCrudDb.get_user_by_username(db_session, username=api_manager.admin_steps.username)
-        admin_id = UserCrudDb.get_user_by_username(db_session, username=api_manager.admin_steps.username).id
+        admin_user = User.get_user_by_username(db_session, username=api_manager.admin_steps.username)
+        admin_id = User.get_user_by_username(db_session, username=api_manager.admin_steps.username).id
         admin_account_in_db = Account.get_account_by_id(db_session, admin_id)
 
         assert admin_user is not None, "Admin user not found in database"

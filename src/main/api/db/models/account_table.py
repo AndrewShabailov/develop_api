@@ -3,7 +3,8 @@ from src.main.api.db.base import Base
 
 
 class Account(Base):
-    __tablename__ = 'account'
+    __tablename__ = "account"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     number = Column(String, unique=True, nullable=False)

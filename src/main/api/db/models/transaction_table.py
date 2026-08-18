@@ -3,7 +3,8 @@ from src.main.api.db.base import Base
 
 
 class Transaction(Base):
-    __tablename__ = 'transaction'
+    __tablename__ = "transaction"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     to_account_id = Column(Integer, ForeignKey('account.id'))
     from_account_id = Column(Integer, ForeignKey('account.id'))

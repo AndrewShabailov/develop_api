@@ -1,4 +1,6 @@
 import pytest
+from sqlalchemy.orm.session import Session
+
 from src.main.api.classes.api_manager import ApiManager
 from src.main.api.fixtures.api_fixture import api_manager
 from src.main.api.fixtures.user_fixture import credit_user_request, active_credit
@@ -8,12 +10,14 @@ from src.main.api.models.create_account_response import CreateAccountResponse
 from src.main.api.models.create_user_request import CreateUserRequest
 from src.main.api.specs.request_specs import RequestSpecs
 from src.main.api.specs.response_specs import ResponseSpecs
+from src.main.api.db.crud.credit_crud import CreditCrudDb as Credit
 
 
 class TestCredit:
     @pytest.mark.known_bug("Expected 'accountId' instead of 'id' in response")
     def test_credit_request(
             self,
+            db_session: Session,
             api_manager: ApiManager,
             credit_user_request: CreateUserRequest,
             credit_account: CreateAccountResponse,
@@ -27,11 +31,21 @@ class TestCredit:
             term_months=credit_data["term_months"]
         )
 
-        assert response.id == credit_account.id, f"Wrong {response.id}"
-        assert response.amount == response.balance, f"Wrong {response.amount}"
+        assert response.id == credit_account.id, f"Wrong id: {response.id}"
+        assert response.amount == response.balance, f"Wrong amount: {response.amount}"
+
+        credit_from_db = Credit.get_credit_by_id(db_session, response.creditId)
+
+        assert credit_from_db.id == response.creditId, f"Credit id: {response.creditId} was not found in db"
+        assert credit_from_db.account_id == response.id, "Wrong account id"
+        assert abs(credit_from_db.balance) == response.balance, "Different balances"
+        assert credit_from_db.term_months == response.termMonths, "Different term months"
+        assert credit_from_db.amount == response.amount, f"Different amount: {response.amount}"
+
 
     def test_credit_repay(
             self,
+            db_session: Session,
             api_manager: ApiManager,
             active_credit: dict
     ):
@@ -50,9 +64,18 @@ class TestCredit:
             (f"Credit ID mismatch! Expected: {active_credit['credit_response'].creditId},"
              f" got: {repay_response.creditId}")
 
+        repay_from_db = Credit.get_credit_by_id(db_session, repay_response.creditId)
+
+        assert repay_from_db.amount == repay_response.amountDeposited,\
+            f"Repay amount: {repay_from_db.amount} was not found in DB"
+        assert repay_from_db.id == repay_response.creditId,\
+            f"Credit ID: {repay_response.creditId} was not found in DB"
+
+
 
     def test_credit_history(
             self,
+            db_session: Session,
             api_manager: ApiManager,
             active_credit: dict
     ):
