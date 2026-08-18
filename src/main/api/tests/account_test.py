@@ -1,5 +1,4 @@
 import pytest
-
 from src.main.api.classes.api_manager import ApiManager
 from src.main.api.fixtures.user_fixture import destination_account, account_with_deposit
 from src.main.api.foundation.endpoint import Endpoint
@@ -7,9 +6,12 @@ from src.main.api.foundation.requesters.crud_requester import CrudRequester
 from src.main.api.models.create_account_response import CreateAccountResponse
 from src.main.api.models.create_user_request import CreateUserRequest
 from src.main.api.models.deposit_account_request import DepositAccountRequest
+from src.main.api.models.login_user_response import User
 from src.main.api.specs.request_specs import RequestSpecs
 from src.main.api.specs.response_specs import ResponseSpecs
 from src.main.api.db.crud.account_crud import AccountCrudDb as Account
+from src.main.api.db.crud.transaction_crud import TransactionCrudDb as Transaction
+from src.main.api.db.crud.user_crud import UserCrudDb
 from sqlalchemy.orm.session import Session
 
 
@@ -33,6 +35,7 @@ class TestCreateAccount:
 
     def test_user_deposits_to_his_account(
             self,
+            db_session: Session,
             api_manager: ApiManager,
             create_user_request: CreateUserRequest,
             new_account: CreateAccountResponse,
@@ -49,9 +52,14 @@ class TestCreateAccount:
             (f"Deposit failed! Expected balance: {deposit_data['expected_balance']},"
              f" but got: {deposit_response.balance}")
 
+        record_in_db = Account.get_account_by_id(db_session, deposit_response.id)
+        assert record_in_db.balance == deposit_data["amount"], "Wrong balance in DB"
+        assert record_in_db.id == new_account.id, "Wrong 'ID' in DB"
+
 
     def test_user_transfers_to_his_account(
             self,
+            db_session: Session,
             api_manager: ApiManager,
             create_user_request: CreateUserRequest,
             account_with_deposit: dict,
@@ -72,9 +80,14 @@ class TestCreateAccount:
             (f"Transfer balance check failed! Expected: {transfer_data['expected_balance']},"
              f" got: {response.fromAccountIdBalance}")
 
+        account_in_db = Account.get_account_by_id(db_session, response.toAccountId)
+        assert account_in_db.balance == transfer_data["amount"], "Account balance check failed"
+        assert account_in_db.id == destination_account, "Destination account have different id"
+
 
     def test_admin_get_account_transactions(
             self,
+            db_session: Session,
             api_manager: ApiManager,
             create_user_request: CreateUserRequest,
             account_with_deposit: dict
@@ -85,15 +98,24 @@ class TestCreateAccount:
             account_id=account_with_deposit["account_id"]
         )
 
-        transaction_id = response.transactions[0].transactionId
+        assert len(response.transactions) > 0, "Transactions list is empty for this account"
 
-        assert len(response.transactions) > 0, "Transactions list is empty"
-        assert transaction_id in [t.transactionId for t in response.transactions],\
-            "Transaction id is not in transactions list"
+        transaction_id = response.transactions[0].transactionId
+        transaction_in_db = Transaction.get_transaction_by_id(db_session, transaction_id)
+
+        assert transaction_in_db is not None, f"Transaction with ID {transaction_id} was not found in the database"
+        assert transaction_in_db.to_account_id == account_with_deposit["account_id"], \
+            (f"Account ID mismatch! Expected: {account_with_deposit['account_id']},"
+             f" got: {transaction_in_db.to_account_id}")
+
+        assert transaction_in_db.amount == account_with_deposit["balance"], \
+            (f"Transaction amount mismatch! Expected: {account_with_deposit['balance']},"
+             f" got: {transaction_in_db.amount}")
 
 
     def test_negative_admin_creates_his_bank_account(
             self,
+            db_session: Session,
             api_manager: ApiManager,
             create_user_request: CreateUserRequest
     ):
@@ -108,6 +130,14 @@ class TestCreateAccount:
         ).post(create_user_request)
 
         assert response.json()["error"] == "Admins cannot create bank accounts"
+
+        admin_user = UserCrudDb.get_user_by_username(db_session, username=api_manager.admin_steps.username)
+        admin_id = UserCrudDb.get_user_by_username(db_session, username=api_manager.admin_steps.username).id
+        admin_account_in_db = Account.get_account_by_id(db_session, admin_id)
+
+        assert admin_user is not None, "Admin user not found in database"
+        assert admin_account_in_db is None, "Admin user has account in DB"
+
 
     @pytest.mark.known_bug('Response has wrong JSON key "message". Expected: "error"')
     def test_negative_user_deposits_to_his_account_with_no_token(
