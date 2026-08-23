@@ -115,7 +115,6 @@ def test_product_details_onesie(page):
 
 
 def test_product_fleece_jacket(page):
-
     page.goto("https://www.saucedemo.com/")
     page.get_by_placeholder("Username").fill("standard_user")
     page.get_by_placeholder("Password").fill("secret_sauce")
