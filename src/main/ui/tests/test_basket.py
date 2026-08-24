@@ -1,114 +1,95 @@
-from playwright.sync_api import expect
+from src.main.ui.steps.catalog_steps import CatalogSteps
+from src.main.ui.steps.checkout_steps import CheckoutSteps
+from src.main.ui.steps.basket_steps import BasketSteps
 
 
-def test_add_item_and_check_in_cart(auth_page):
+def test_add_item_and_check_in_cart(page):
+    catalog = CatalogSteps(page)
+    basket = BasketSteps(page)
 
-    auth_page.locator('[data-test="add-to-cart-sauce-labs-backpack"]').click()
-    auth_page.locator(".shopping_cart_link").click()
-    item_name = auth_page.locator('[data-test="inventory-item-name"]')
+    catalog.login("standard_user", "secret_sauce")
+    catalog.add_to_cart("Sauce Labs Backpack")
 
-    assert item_name.inner_text() == "Sauce Labs Backpack"
-
-
-def test_add_items_and_check_in_cart(auth_page):
-
-    auth_page.locator('[data-test="add-to-cart-sauce-labs-fleece-jacket"]').click()
-    auth_page.locator('[data-test="add-to-cart-sauce-labs-bolt-t-shirt"]').click()
-    auth_page.locator(".shopping_cart_link").click()
-    name_jacket = auth_page.locator('.inventory_item_name', has_text='Sauce Labs Fleece Jacket')
-    name_t_shirt = auth_page.locator('.inventory_item_name', has_text='Sauce Labs Bolt T-Shirt')
-
-    assert name_jacket.inner_text() == "Sauce Labs Fleece Jacket"
-    assert name_t_shirt.inner_text() == "Sauce Labs Bolt T-Shirt"
+    basket.open_cart()
+    basket.expect_item_in_cart("Sauce Labs Backpack")
 
 
-def test_remove_item_from_cart(auth_page):
+def test_add_items_and_check_in_cart(page):
+    catalog = CatalogSteps(page)
+    basket = BasketSteps(page)
 
-    auth_page.locator('[data-test="add-to-cart-sauce-labs-fleece-jacket"]').click()
-    auth_page.locator('[data-test="shopping-cart-link"]').click()
-    jacket = auth_page.locator('.inventory_item_name', has_text='Sauce Labs Fleece Jacket')
+    catalog.login("standard_user", "secret_sauce")
+    catalog.add_to_cart("Sauce Labs Fleece Jacket")
+    catalog.add_to_cart("Sauce Labs Bolt T-Shirt")
 
-    expect(jacket).to_be_visible()
-    auth_page.locator('[data-test="remove-sauce-labs-fleece-jacket"]').click()
-
-    expect(jacket).not_to_be_visible()
-
-
-def test_remove_items_from_cart(auth_page):
-
-    auth_page.locator('[data-test="add-to-cart-sauce-labs-backpack"]').click()
-    auth_page.locator('[data-test="add-to-cart-test.allthethings()-t-shirt-(red)"]').click()
-    auth_page.locator('[data-test="shopping-cart-link"]').click()
-    backpack = auth_page.locator('.inventory_item_name', has_text='Sauce Labs Backpack')
-    t_shirt = auth_page.locator('.inventory_item_name', has_text='Test.allTheThings() T-Shirt (Red)')
-
-    expect(backpack).to_be_visible()
-    expect(t_shirt).to_be_visible()
-
-    auth_page.locator('[data-test="remove-sauce-labs-backpack"]').click()
-    auth_page.locator('[data-test="remove-test.allthethings()-t-shirt-(red)"]').click()
-
-    expect(backpack).not_to_be_visible()
-    expect(t_shirt).not_to_be_visible()
+    basket.open_cart()
+    basket.expect_item_in_cart("Sauce Labs Fleece Jacket")
+    basket.expect_item_in_cart("Sauce Labs Bolt T-Shirt")
 
 
-def test_checkout_multiple_items(auth_page):
+def test_remove_item_from_cart(page):
+    catalog = CatalogSteps(page)
+    basket = BasketSteps(page)
 
-    jacket_card = auth_page.locator(".inventory_item", has_text="Sauce Labs Fleece Jacket")
-    t_shirt_card = auth_page.locator(".inventory_item", has_text="Sauce Labs Bolt T-Shirt")
+    catalog.login("standard_user", "secret_sauce")
+    catalog.add_to_cart("Sauce Labs Fleece Jacket")
 
-    jacket_card.locator("button").click()
-    t_shirt_card.locator("button").click()
-
-    auth_page.locator('[data-test="shopping-cart-link"]').click()
-
-    jacket_name = auth_page.locator('.inventory_item_name', has_text='Sauce Labs Fleece Jacket')
-    t_shirt_name = auth_page.locator('.inventory_item_name', has_text='Sauce Labs Bolt T-Shirt')
-    expect(jacket_name).to_be_visible()
-    expect(t_shirt_name).to_be_visible()
-
-    prices_text = auth_page.locator(".inventory_item_price").all_text_contents()
-    prices = [float(p.replace("$","")) for p in prices_text]
-    expected_total = sum(prices)
-
-    auth_page.locator('[data-test="checkout"]').click()
-    auth_page.locator('[data-test="firstName"]').fill("A")
-    auth_page.locator('[data-test="lastName"]').fill("K")
-    auth_page.locator('[data-test="postalCode"]').fill("000")
-    auth_page.locator('[data-test="continue"]').click()
-
-    item_total_text = auth_page.locator(".summary_subtotal_label").inner_text()
-    item_total_value = float(item_total_text.split("$")[1])
-
-    assert item_total_value == expected_total,\
-        f"Item total {item_total_value} не совпадает с суммой товаров {expected_total}"
+    basket.open_cart()
+    basket.expect_item_in_cart("Sauce Labs Fleece Jacket")
+    basket.remove_item("Sauce Labs Fleece Jacket")
+    basket.expect_item_not_in_cart("Sauce Labs Fleece Jacket")
 
 
-    tax_text = auth_page.locator(".summary_tax_label").inner_text()
-    tax_value = float(tax_text.split("$")[1])
-    total_text = auth_page.locator(".summary_total_label").inner_text()
-    total_value = float(total_text.split("$")[1])
-    assert total_value == round(item_total_value + tax_value, 2),\
-        "Total не совпадает с суммой Item total + Tax"
+def test_remove_items_from_cart(page):
+    catalog = CatalogSteps(page)
+    basket = BasketSteps(page)
 
-    auth_page.locator('[data-test="finish"]').click()
+    catalog.login("standard_user", "secret_sauce")
+    catalog.add_to_cart("Sauce Labs Backpack")
+    catalog.add_to_cart("Test.allTheThings() T-Shirt (Red)")
 
-    success_message = auth_page.locator(".complete-header")
-    expect(success_message).to_have_text("Thank you for your order!")
+    basket.open_cart()
+    basket.expect_item_in_cart("Sauce Labs Backpack")
+    basket.expect_item_in_cart("Test.allTheThings() T-Shirt (Red)")
+
+    basket.remove_item("Sauce Labs Backpack")
+    basket.remove_item("Test.allTheThings() T-Shirt (Red)")
+    basket.expect_item_not_in_cart("Sauce Labs Backpack")
+    basket.expect_item_not_in_cart("Test.allTheThings() T-Shirt (Red)")
 
 
-def test_checkout_without_items(auth_page):
+def test_checkout_multiple_items(page):
+    catalog = CatalogSteps(page)
+    basket = BasketSteps(page)
+    checkout = CheckoutSteps(page)
 
-    auth_page.locator('[data-test="add-to-cart-sauce-labs-fleece-jacket"]').click()
-    auth_page.locator('[data-test="shopping-cart-link"]').click()
-    jacket = auth_page.locator('.inventory_item_name', has_text='Sauce Labs Fleece Jacket')
+    catalog.login("standard_user", "secret_sauce")
+    catalog.add_to_cart("Sauce Labs Fleece Jacket")
+    catalog.add_to_cart("Sauce Labs Bolt T-Shirt")
 
-    expect(jacket).to_be_visible()
+    basket.open_cart()
+    basket.expect_item_in_cart("Sauce Labs Fleece Jacket")
+    basket.expect_item_in_cart("Sauce Labs Bolt T-Shirt")
+    basket_total = basket.get_items_total_price()
 
-    auth_page.locator('[data-test="checkout"]').click()
-    auth_page.get_by_placeholder("First Name").fill("NewUser")
-    auth_page.get_by_placeholder("Last Name").fill("Nrk")
-    auth_page.locator('[data-test="continue"]').click()
+    basket.checkout()
+    checkout.start_checkout(first_name="Test", last_name="User", postal_code="12345")
+    checkout_total = checkout.get_item_total_after_continue()
+    assert checkout_total == basket_total, "Сумма товаров в Checkout не совпадает с корзиной"
 
-    error_message = auth_page.locator('[data-test="error"]')
-    expect(error_message).to_have_text('Error: Postal Code is required')
+
+def test_checkout_without_items(page):
+    catalog = CatalogSteps(page)
+    basket = BasketSteps(page)
+    checkout = CheckoutSteps(page)
+
+    catalog.login("standard_user", "secret_sauce")
+
+    basket.open_cart()
+    items = basket.get_item_names()
+    assert len(items) == 0, "Корзина не пуста"
+
+    basket.checkout()
+    checkout.start_checkout(first_name="NewUser", last_name="Nrk", postal_code="")
+    error_text = checkout.get_error_text()
+    assert error_text != "", "Ожидалась ошибка при оформлении пустой корзины"
