@@ -1,4 +1,3 @@
-# Путь в репозитории: .github/workflows/ui-tests.yml
 name: UI Tests
 
 on:
@@ -7,6 +6,10 @@ on:
   pull_request:
     branches: [ master ]
   workflow_dispatch:
+
+concurrency:
+  group: ui-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ui:
@@ -34,12 +37,52 @@ jobs:
         run: python -m playwright install --with-deps chromium
 
       - name: Run UI tests
-        run: pytest src/main/ui/tests -v --junitxml=junit-ui.xml
+        run: |
+          pytest src/main/ui/tests -v \
+            --alluredir=allure-results \
+            --junitxml=junit-ui.xml
 
-      - name: Upload junit report
+      - name: Upload allure results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: junit-ui
-          path: junit-ui.xml
+          name: allure-results-ui
+          path: allure-results
           retention-days: 14
+
+  report:
+    name: Publish Allure report
+    needs: [ ui ]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download allure results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-results-ui
+          path: allure-results
+
+      - name: Get Allure history
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Build Allure report
+        uses: simple-elf/allure-report-action@v1.15
+        with:
+          allure_results: allure-results
+          allure_history: allure-history
+          gh_pages: gh-pages
+          keep_reports: 20
+
+      - name: Deploy report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-history
