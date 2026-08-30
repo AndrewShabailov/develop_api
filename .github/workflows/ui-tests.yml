@@ -83,6 +83,15 @@ jobs:
           gh_pages: gh-pages
           keep_reports: 20
 
+      - name: Debug — что лежит в allure-history
+        run: |
+          echo "--- workspace ---"
+          ls -la
+          echo "--- allure-history ---"
+          ls -laR allure-history || echo "НЕТ ПАПКИ allure-history"
+          echo "--- allure-results ---"
+          ls -la allure-results | head -20
+
       - name: Deploy report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
