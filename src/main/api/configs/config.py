@@ -13,7 +13,7 @@ class Config:
             config_path = Path(__file__).resolve().parents[4] / 'resources' / 'urls.properties'
 
             if not config_path.exists():
-                print("🔍 Содержимое папки проекта:", list(Path(__file__).resolve().parents[4].iterdir()))
+                print("Содержимое папки проекта:", list(Path(__file__).resolve().parents[4].iterdir()))
                 raise FileNotFoundError(f'Config path not found: {config_path}')
 
             with open(config_path, 'r', encoding='utf-8') as f:
