@@ -13,6 +13,8 @@ from src.main.api.db.crud.user_crud import UserCrudDb as User
 
 @pytest.mark.api
 class TestUserLogin:
+
+    @pytest.mark.api
     def test_login_admin(
             self,
             db_session: Session,
@@ -28,7 +30,7 @@ class TestUserLogin:
         assert user_from_db.username == response.user.username, f"Username is NOT equal {response.user.username}"
         assert user_from_db.role == response.user.role, f"Role is NOT equal {response.role}"
 
-
+    @pytest.mark.api
     def test_login_user(
             self,
             db_session: Session,

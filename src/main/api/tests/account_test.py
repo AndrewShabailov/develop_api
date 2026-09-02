@@ -15,6 +15,7 @@ from sqlalchemy.orm.session import Session
 
 
 class TestCreateAccount:
+    @pytest.mark.api
     def test_admin_creates_new_account(
             self,
             db_session: Session,
@@ -31,7 +32,7 @@ class TestCreateAccount:
         assert account_from_db.id == response.id, "Account is not created in DB"
         assert account_from_db.balance is not None, "Balance is not created in DB"
 
-
+    @pytest.mark.api
     def test_user_deposits_to_his_account(
             self,
             db_session: Session,
@@ -55,7 +56,7 @@ class TestCreateAccount:
         assert record_in_db.balance == deposit_data["amount"], "Wrong balance in DB"
         assert record_in_db.id == new_account.id, "Wrong 'ID' in DB"
 
-
+    @pytest.mark.api
     def test_user_transfers_to_his_account(
             self,
             db_session: Session,
@@ -83,7 +84,7 @@ class TestCreateAccount:
         assert account_in_db.balance == transfer_data["amount"], "Account balance check failed"
         assert account_in_db.id == destination_account, "Destination account have different id"
 
-
+    @pytest.mark.api
     def test_admin_get_account_transactions(
             self,
             db_session: Session,

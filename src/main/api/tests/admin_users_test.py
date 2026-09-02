@@ -13,6 +13,7 @@ from sqlalchemy.orm.session import Session
 
 
 class TestAdmin:
+    @pytest.mark.api
     @pytest.mark.parametrize(
         "create_user_request",
         [RandomModelGenerator.generate(CreateUserRequest)]
@@ -54,6 +55,7 @@ class TestAdmin:
 
         assert user_from_db is None, "User is created"
 
+    @pytest.mark.api
     def test_all_users(
             self,
             api_manager: ApiManager
@@ -63,6 +65,7 @@ class TestAdmin:
 
         assert len(response) != 0, f"Users list: {len(response)} users"
 
+    @pytest.mark.api
     @pytest.mark.parametrize(
         "create_user_request",
         [RandomModelGenerator.generate(CreateUserRequest)]
@@ -85,6 +88,7 @@ class TestAdmin:
         assert user_from_db is not None, f"User with ID {created_user.id} not found in database"
         assert user_from_db.deleted_at is not None, f"User with ID {created_user.id} was not soft-deleted"
 
+    @pytest.mark.api
     @pytest.mark.parametrize(
         "create_user_request",
         [RandomModelGenerator.generate(CreateUserRequest)]
@@ -115,7 +119,7 @@ class TestAdmin:
         "create_user_request",
         [RandomModelGenerator.generate(CreateUserRequest)]
     )
-    def test_create_user_with_the_same_name_negative(
+    def test_negative_create_user_with_the_same_name(
             self,
             db_session: Session,
             api_manager: ApiManager,
@@ -160,7 +164,7 @@ class TestAdmin:
             f"Unexpected error message: {response.json()['error']}"
 
 
-    def test_delete_non_existing_user_negative(
+    def test_negative_delete_non_existing_user(
             self,
             db_session: Session,
             api_manager: ApiManager
@@ -183,7 +187,7 @@ class TestAdmin:
 
     @pytest.mark.known_bug('Response has wrong status code, error message.'
                            'Expected: status - 403, error - Admin access required')
-    def test_delete_all_users_negative(self, create_user_request: CreateUserRequest):
+    def test_negative_delete_all_users(self, create_user_request: CreateUserRequest):
 
         response = CrudRequester(
             RequestSpecs.auth_headers(
