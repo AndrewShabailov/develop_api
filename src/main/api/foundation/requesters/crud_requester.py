@@ -17,7 +17,7 @@ class CrudRequester(HttpRequester):
         else:
             body = model.model_dump()
 
-        with allure.step(f'POST {Config.fetch("backendUrl")}{self.endpoint.value.url}'):
+        with allure.step(f"POST {Config.fetch('backendUrl')}{self.endpoint.value.url}"):
             allure.attach(str(body), "Request body", allure.attachment_type.JSON)
         response = requests.post(
             url=self._url(),
@@ -35,7 +35,7 @@ class CrudRequester(HttpRequester):
 
     def get(self, entity_id: Optional[int] = None) -> Response:
 
-        allure.step(f'GET {Config.fetch("backendUrl")}{self.endpoint.value.url}')
+        allure.step(f"GET {Config.fetch('backendUrl')}{self.endpoint.value.url}")
 
         response = requests.get(
             url=self._url(entity_id),
@@ -50,7 +50,7 @@ class CrudRequester(HttpRequester):
         return response
 
     def delete(self, entity_id: Optional[int] = None) -> Response:
-        allure.step(f'GET {Config.fetch("backendUrl")}{self.endpoint.value.url}')
+        allure.step(f"GET {Config.fetch('backendUrl')}{self.endpoint.value.url}")
         response = requests.delete(
             url=self._url(entity_id),
             headers=self.request_spec

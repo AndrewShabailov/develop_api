@@ -1,0 +1,13 @@
+services:
+  backend:
+    image: clausmerderet/bank_api:latest
+    ports:
+      - "5432:5432"
+    networks:
+      - bank-network
+
+networks:
+  bank-network:
+    driver: bridge
+
+

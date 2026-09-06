@@ -14,6 +14,7 @@ from src.main.api.db.crud.credit_crud import CreditCrudDb as Credit
 
 
 class TestCredit:
+    @pytest.mark.api
     @pytest.mark.known_bug("Expected 'accountId' instead of 'id' in response")
     def test_credit_request(
             self,
@@ -42,7 +43,7 @@ class TestCredit:
         assert credit_from_db.term_months == response.termMonths, "Different term months"
         assert credit_from_db.amount == response.amount, f"Different amount: {response.amount}"
 
-
+    @pytest.mark.api
     def test_credit_repay(
             self,
             db_session: Session,
@@ -71,8 +72,7 @@ class TestCredit:
         assert repay_from_db.id == repay_response.creditId,\
             f"Credit ID: {repay_response.creditId} was not found in DB"
 
-
-
+    @pytest.mark.api
     def test_credit_history(
             self,
             db_session: Session,
@@ -139,7 +139,7 @@ class TestCredit:
         )
 
         assert response.json()["error"] == (f"The amount is not enough."
-                                            f" Credit balance: -{int(active_credit["credit_response"].balance)}"),\
+                                            f" Credit balance: -{int(active_credit['credit_response'].balance)}"),\
             "Wrong error details"
 
     @pytest.mark.known_bug(
